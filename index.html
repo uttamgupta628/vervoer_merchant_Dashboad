@@ -323,10 +323,11 @@ const urlParams   = new URLSearchParams(window.location.search);
 const AUTH_TOKEN  = urlParams.get('token') || '';
 const MERCHANT_ID = urlParams.get('merchantId') || '';
 
-// All merchant routes live under /merchants/...
-// e.g. GET /api/merchants/stats
+// api(path) calls API_BASE_URL + path directly
+// e.g. api('/merchants/stats') => https://vervoer-backend2.onrender.com/api/merchants/stats
 const api = async (path) => {
-  const url = `${API_BASE_URL}/merchants${path}`;
+  const url = `${API_BASE_URL}${path}`;
+  console.log('[API] GET', url, 'token:', AUTH_TOKEN ? AUTH_TOKEN.slice(0,20)+'...' : 'MISSING');
   const res = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${AUTH_TOKEN}`,
@@ -335,7 +336,7 @@ const api = async (path) => {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${res.statusText}${body ? ': ' + body.slice(0,120) : ''}`);
+    throw new Error(`${res.status} ${res.statusText} [${url}]` + (body ? ': ' + body.slice(0,200) : ''));
   }
   const json = await res.json();
   return json?.data ?? json;
@@ -812,7 +813,7 @@ const DryCleaningTab = ({ token }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api('/dry-cleaner-stats');
+      const res = await api('/merchants/dry-cleaner-stats');
       setData(res);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
@@ -1090,6 +1091,24 @@ const App = () => {
 
   useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
 
+  // Show helpful message if no token in URL
+  if (!AUTH_TOKEN && !loading) return (
+    <div className="app">
+      <div className="topbar"><div className="topbar-logo">Vervoer</div></div>
+      <div className="center-state" style={{flex:1}}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div style={{fontWeight:700,fontSize:16}}>No auth token found</div>
+        <div style={{color:'var(--text-2)',fontSize:13,maxWidth:320,textAlign:'center',lineHeight:1.6}}>
+          Open this dashboard from the Vervoer merchant app.<br/>
+          The URL must include <code style={{background:'#F7F6F3',padding:'1px 6px',borderRadius:4}}>?token=YOUR_JWT</code>
+        </div>
+        <div style={{background:'#F7F6F3',borderRadius:10,padding:'10px 16px',fontSize:12,color:'var(--text-2)',maxWidth:340,wordBreak:'break-all'}}>
+          Current URL: {window.location.href}
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) return (
     <div className="app">
       <div className="topbar">
@@ -1112,7 +1131,7 @@ const App = () => {
       <div className="center-state" style={{flex:1}}>
         <Icon name="AlertTriangle" size={40} color="var(--warning)"/>
         <div style={{fontWeight:700, fontSize:16}}>Could not load dashboard</div>
-        <div style={{color:'var(--text-2)', fontSize:13, maxWidth:320, textAlign:'center'}}>{error}</div>
+        <div style={{color:'var(--text-2)', fontSize:13, maxWidth:320, textAlign:'center'}}><span style={{wordBreak:'break-all',fontFamily:'monospace',fontSize:12}}>{error}</span></div>
         <button className="btn-primary" onClick={() => setRefreshKey(k=>k+1)}>
           <Icon name="RefreshCw" size={15}/> Try Again
         </button>
