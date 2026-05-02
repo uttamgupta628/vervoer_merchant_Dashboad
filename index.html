@@ -322,41 +322,26 @@ const API_BASE_URL = 'https://vervoer-backend2.onrender.com/api';
 const urlParams   = new URLSearchParams(window.location.search);
 const AUTH_TOKEN  = urlParams.get('token') || '';
 const MERCHANT_ID = urlParams.get('merchantId') || '';
-if (!AUTH_TOKEN) {
-  document.getElementById("root").innerHTML = `
-    <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif">
-      <h2>No token provided ❌</h2>
-    </div>
-  `;
-  throw new Error("Missing token");
-}
+
 // api(path) calls API_BASE_URL + path directly
 // e.g. api('/merchants/stats') => https://vervoer-backend2.onrender.com/api/merchants/stats
 const api = async (path) => {
-  try {
-    const url = `${API_BASE_URL}${path}`;
-
-    const res = await fetch(url, {
-  method: "GET",
-  headers: {
-    Authorization: `Bearer ${AUTH_TOKEN}`,
-    "Content-Type": "application/json",
-  },
-});
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("API ERROR:", text);
-      return null; // ❌ DON'T THROW
+  const url = `${API_BASE_URL}${path}`;
+  console.log('[API] GET', url, 'token:', AUTH_TOKEN ? AUTH_TOKEN.slice(0,20)+'...' : 'MISSING');
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${AUTH_TOKEN}`,
+      'Content-Type': 'application/json',
     }
-
-    const json = await res.json();
-    return json?.data ?? json;
-
-  } catch (err) {
-    console.error("FETCH FAILED:", err);
-    return null;
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${res.statusText} [${url}]` + (body ? ': ' + body.slice(0,200) : ''));
   }
+  const json = await res.json();
+  return json?.data ?? json;
 };
+
 // ══════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════
@@ -1076,73 +1061,81 @@ const App = () => {
   const [refreshKey,setRefreshKey]= useState(0);
 
   const fetchData = useCallback(async () => {
-  setLoading(true);
-  setError(null);
-
-  try {
-    const res = await api('/merchants/stats');
-
-    if (!res) {
-      setError("Failed to load dashboard");
-      return;
-    }
-
-    const safe = res || {};
-
-    const norm = {
-      ...safe,
-      venues: (safe.venues || []).map(v => ({
-        ...v,
-        recentBookings: (v.recentBookings || []).map(b => ({
+    setLoading(true);
+    setError(null);
+    try {
+      // No token → show error immediately, don't even fetch
+      if (!AUTH_TOKEN) {
+        setError('NO_TOKEN');
+        return;
+      }
+      const res = await api('/merchants/stats');
+      if (!res) {
+        setError('API returned empty data. Check your token and that the backend is running.');
+        return;
+      }
+      const norm = {
+        totalEarnings:  res.totalEarnings  || { daily:0, weekly:0, monthly:0 },
+        totalBookings:  res.totalBookings  || { daily:0, weekly:0, monthly:0 },
+        venues: (res.venues||[]).map(v => ({
+          ...v,
+          slots: v.slots || { total:0, booked:0, available:0 },
+          recentBookings: (v.recentBookings||[]).map(b => ({
+            ...b,
+            from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
+            to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
+          }))
+        })),
+        recentBookings: (res.recentBookings||[]).map(b => ({
           ...b,
-          from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-          to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
+          from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
+          to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
         }))
-      })),
-      recentBookings: (safe.recentBookings || []).map(b => ({
-        ...b,
-        from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-        to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
-      }))
-    };
+      };
+      setData(norm);
+    } catch(e) {
+      console.error('Dashboard fetch error:', e);
+      setError(e.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshKey]);
 
-    setData(norm); // ✅ MUST
+  // ✅ CRITICAL — triggers on mount and every refresh
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  } catch (e) {
-    console.error(e);
-    setError("Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-}, []);
-  // Show helpful message if no token in URL
-  if (!AUTH_TOKEN && !loading) return (
-    <div className="app">
-      <div className="topbar"><div className="topbar-logo">Vervoer</div></div>
-      <div className="center-state" style={{flex:1}}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <div style={{fontWeight:700,fontSize:16}}>No auth token found</div>
-        <div style={{color:'var(--text-2)',fontSize:13,maxWidth:320,textAlign:'center',lineHeight:1.6}}>
-          Open this dashboard from the Vervoer merchant app.<br/>
-          The URL must include <code style={{background:'#F7F6F3',padding:'1px 6px',borderRadius:4}}>?token=YOUR_JWT</code>
-        </div>
-        <div style={{background:'#F7F6F3',borderRadius:10,padding:'10px 16px',fontSize:12,color:'var(--text-2)',maxWidth:340,wordBreak:'break-all'}}>
-          Current URL: {window.location.href}
-        </div>
-      </div>
-    </div>
-  );
-
+  // ── Render states ─────────────────────────────────────────
   if (loading) return (
     <div className="app">
       <div className="topbar">
-        <div className="topbar-logo">ParkFlow</div>
+        <div className="topbar-logo">Vervoer</div>
         <div className="topbar-sep"/>
         <div className="topbar-merchant">Merchant Dashboard</div>
       </div>
       <div className="center-state" style={{flex:1}}>
-        <Spinner size={40}/>
-        <span style={{color:'var(--text-2)', fontSize:14}}>Loading dashboard…</span>
+        <Spinner size={44}/>
+        <span style={{color:'var(--text-2)', fontSize:14, marginTop:8}}>Loading dashboard…</span>
+        <span style={{color:'#C4BDB8', fontSize:11, marginTop:4}}>Connecting to {API_BASE_URL}</span>
+      </div>
+    </div>
+  );
+
+  if (error === 'NO_TOKEN') return (
+    <div className="app">
+      <div className="topbar"><div className="topbar-logo">Vervoer</div></div>
+      <div className="center-state" style={{flex:1}}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div style={{fontWeight:700,fontSize:18}}>No auth token</div>
+        <div style={{color:'var(--text-2)',fontSize:13,maxWidth:320,textAlign:'center',lineHeight:1.7}}>
+          Open this page from the <strong>Vervoer merchant app</strong>.<br/>
+          The URL needs <code style={{background:'#F7F6F3',padding:'2px 7px',borderRadius:5}}>?token=YOUR_JWT</code>
+        </div>
+        <div style={{background:'#F7F6F3',borderRadius:10,padding:'10px 16px',fontSize:11,color:'var(--text-2)',maxWidth:360,wordBreak:'break-all',textAlign:'center'}}>
+          {window.location.href}
+        </div>
       </div>
     </div>
   );
@@ -1150,17 +1143,23 @@ const App = () => {
   if (error) return (
     <div className="app">
       <div className="topbar">
-        <div className="topbar-logo">ParkFlow</div>
+        <div className="topbar-logo">Vervoer</div>
+        <div className="topbar-sep"/>
+        <div className="topbar-merchant">Merchant Dashboard</div>
       </div>
       <div className="center-state" style={{flex:1}}>
-        <Icon name="AlertTriangle" size={40} color="var(--warning)"/>
-        <div style={{fontWeight:700, fontSize:16}}>Could not load dashboard</div>
-        <div style={{color:'var(--text-2)', fontSize:13, maxWidth:320, textAlign:'center'}}><span style={{wordBreak:'break-all',fontFamily:'monospace',fontSize:12}}>{error}</span></div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div style={{fontWeight:700,fontSize:18}}>Could not load dashboard</div>
+        <div style={{color:'var(--text-2)',fontSize:12,maxWidth:360,textAlign:'center',lineHeight:1.6,fontFamily:'monospace',background:'#FFF1F1',padding:'10px 14px',borderRadius:10,wordBreak:'break-all'}}>
+          {error}
+        </div>
         <button className="btn-primary" onClick={() => setRefreshKey(k=>k+1)}>
-          <Icon name="RefreshCw" size={15}/> Try Again
+          <Icon name="RefreshCw" size={15}/> Retry
         </button>
-        <div style={{fontSize:12,color:'var(--text-2)',marginTop:4,textAlign:'center'}}>
-          Make sure <code style={{background:'#F7F6F3',padding:'1px 5px',borderRadius:4}}>API_BASE_URL</code> is set correctly in index.html
+        <div style={{fontSize:11,color:'var(--text-2)',marginTop:4,textAlign:'center'}}>
+          Backend: <code style={{fontSize:11}}>{API_BASE_URL}</code>
         </div>
       </div>
     </div>
@@ -1168,12 +1167,11 @@ const App = () => {
 
   return (
     <div className="app">
-      {/* Top bar */}
       <div className="topbar">
-        <div className="topbar-logo">ParkFlow</div>
+        <div className="topbar-logo">Vervoer</div>
         <div className="topbar-sep"/>
         <div className="topbar-merchant">
-          {MERCHANT_ID ? `Merchant #${MERCHANT_ID}` : 'Merchant Dashboard'}
+          {MERCHANT_ID ? `ID: ${MERCHANT_ID}` : 'Merchant Dashboard'}
         </div>
         <div className="topbar-right">
           <button className="btn-download" onClick={() => setRefreshKey(k=>k+1)}>
@@ -1182,7 +1180,6 @@ const App = () => {
         </div>
       </div>
 
-      {/* Tab strip */}
       <div className="tab-strip">
         {TABS.map(tab => (
           <button key={tab.key} className={`tab-btn ${activeTab===tab.key?'active':''}`}
@@ -1193,7 +1190,6 @@ const App = () => {
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="main" key={activeTab}>
         {activeTab==='overview'    && <OverviewTab   data={data} period={period} onPeriodChange={setPeriod}/>}
         {activeTab==='slots'       && <SlotsTab      data={data}/>}
