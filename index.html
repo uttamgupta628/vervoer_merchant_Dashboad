@@ -1079,30 +1079,31 @@ const App = () => {
     setLoading(true); setError(null);
     try {
       const res = await api('/merchants/stats');
+
+if (!res) {
+  setError("Failed to load dashboard");
+  setLoading(false);
+  return;
+}
       // Normalize dates
-      const norm = {
-        ...res,
-        venues: (res.venues||[]).map(v => ({
-          ...v,
-          recentBookings: (v.recentBookings||[]).map(b => ({
-            ...b,
-            from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
-            to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
-          }))
-        })),
-        recentBookings: (res.recentBookings||[]).map(b => ({
-          ...b,
-          from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
-          to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
-        }))
-      };
-      setData(norm);
-    } catch(e) {
-      setError(e.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const safe = res || {};
+
+const norm = {
+  ...safe,
+  venues: (safe.venues || []).map(v => ({
+    ...v,
+    recentBookings: (v.recentBookings || []).map(b => ({
+      ...b,
+      from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
+      to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
+    }))
+  })),
+  recentBookings: (safe.recentBookings || []).map(b => ({
+    ...b,
+    from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
+    to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
+  }))
+};
 
   useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
 
