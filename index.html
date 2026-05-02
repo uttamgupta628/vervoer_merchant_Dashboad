@@ -312,6 +312,51 @@
 
 <script type="text/babel">
 // ══════════════════════════════════════════════════════════
+// GLOBAL ERROR CATCH — shows crash details instead of white screen
+// ══════════════════════════════════════════════════════════
+window.onerror = (msg, src, line, col, err) => {
+  document.getElementById('root').innerHTML = `
+    <div style="font-family:monospace;padding:24px;max-width:600px;margin:40px auto">
+      <div style="color:#EF4444;font-size:18px;font-weight:700;margin-bottom:12px">⚠️ JavaScript Error</div>
+      <div style="background:#FFF1F1;border:1px solid #FCA5A5;border-radius:8px;padding:16px;font-size:13px;word-break:break-all;line-height:1.7">
+        <b>Message:</b> ${msg}<br/>
+        <b>Source:</b> ${src}<br/>
+        <b>Line:</b> ${line}:${col}<br/>
+        <b>Stack:</b> ${err?.stack || 'N/A'}
+      </div>
+      <div style="margin-top:16px;font-size:12px;color:#78716C">
+        API: https://vervoer-backend2.onrender.com/api<br/>
+        URL: ${window.location.href}
+      </div>
+      <button onclick="location.reload()" style="margin-top:16px;background:#FF6B35;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+        Reload
+      </button>
+    </div>`;
+  return false;
+};
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e.reason);
+  const root = document.getElementById('root');
+  if (root && root.innerHTML.trim() === '' || root.innerHTML.includes('Loading')) {
+    root.innerHTML = `
+      <div style="font-family:monospace;padding:24px;max-width:600px;margin:40px auto">
+        <div style="color:#EF4444;font-size:18px;font-weight:700;margin-bottom:12px">⚠️ API / Promise Error</div>
+        <div style="background:#FFF1F1;border:1px solid #FCA5A5;border-radius:8px;padding:16px;font-size:13px;word-break:break-all;line-height:1.7">
+          ${String(e.reason?.message || e.reason || 'Unknown error')}
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:#78716C">
+          This is usually a CORS error or invalid API response.<br/>
+          Check that your backend allows: vervoer-merchant-dashboad.vercel.app
+        </div>
+        <button onclick="location.reload()" style="margin-top:16px;background:#FF6B35;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
+          Reload
+        </button>
+      </div>`;
+  }
+});
+
+// ══════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════
 const API_BASE_URL = 'https://vervoer-backend2.onrender.com/api';
@@ -327,19 +372,40 @@ const MERCHANT_ID = urlParams.get('merchantId') || '';
 // e.g. api('/merchants/stats') => https://vervoer-backend2.onrender.com/api/merchants/stats
 const api = async (path) => {
   const url = `${API_BASE_URL}${path}`;
-  console.log('[API] GET', url, 'token:', AUTH_TOKEN ? AUTH_TOKEN.slice(0,20)+'...' : 'MISSING');
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${AUTH_TOKEN}`,
-      'Content-Type': 'application/json',
+  console.log('[API] GET', url);
+  
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Authorization': `Bearer ${AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Origin': window.location.origin,
+      }
+    });
+    clearTimeout(timeout);
+    
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('[API] Error response:', res.status, body);
+      throw new Error(`${res.status} ${res.statusText}: ${body.slice(0,200)}`);
     }
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${res.statusText} [${url}]` + (body ? ': ' + body.slice(0,200) : ''));
+    
+    const json = await res.json();
+    console.log('[API] Success:', path, json);
+    return json?.data ?? json;
+    
+  } catch(err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Request timed out after 15s. Backend may be sleeping (Render free tier).');
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      throw new Error('CORS blocked or network error. Make sure https://vervoer-merchant-dashboad.vercel.app is in your backend CORS allowlist.');
+    }
+    throw err;
   }
-  const json = await res.json();
-  return json?.data ?? json;
 };
 
 // ══════════════════════════════════════════════════════════
@@ -1201,8 +1267,30 @@ const App = () => {
   );
 };
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) { console.error('React error boundary caught:', err, info); }
+  render() {
+    if (this.state.error) return (
+      <div style={{fontFamily:'monospace',padding:24,maxWidth:600,margin:'40px auto'}}>
+        <div style={{color:'#EF4444',fontSize:18,fontWeight:700,marginBottom:12}}>⚠️ Render Error</div>
+        <div style={{background:'#FFF1F1',border:'1px solid #FCA5A5',borderRadius:8,padding:16,fontSize:13,wordBreak:'break-all',lineHeight:1.7}}>
+          <b>{String(this.state.error.message)}</b><br/><br/>
+          <pre style={{fontSize:11,overflow:'auto'}}>{this.state.error.stack}</pre>
+        </div>
+        <button onClick={() => this.setState({error:null})} 
+          style={{marginTop:16,background:'#FF6B35',color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,cursor:'pointer',fontSize:14,fontWeight:600}}>
+          Retry
+        </button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
+root.render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 </body>
 </html>
