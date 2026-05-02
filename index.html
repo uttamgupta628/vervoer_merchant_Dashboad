@@ -11,18 +11,17 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- lucide removed: using inline SVG icons instead -->
   <style>
-    /* ── Reset & Root ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --brand:       #FF6B35;
-      --brand-light: #FFF3EE;
-      --brand-dark:  #E85520;
+      --brand:       #FF9401;
+      --brand-2:     #F99026;
+      --brand-light: #FFF5E6;
+      --brand-dark:  #E07800;
       --bg:          #F7F6F3;
       --card:        #FFFFFF;
-      --text:        #1C1917;
-      --text-2:      #78716C;
+      --text:        #222B45;
+      --text-2:      #808080;
       --border:      #E8E5E1;
       --success:     #22C55E;
       --success-bg:  #F0FDF4;
@@ -46,8 +45,11 @@
       --radius-lg:   24px;
       --shadow:      0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.08);
       --shadow-md:   0 4px 16px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.06);
+      --shadow-lg:   0 8px 32px rgba(255,148,1,0.15), 0 0 1px rgba(0,0,0,0.06);
       --font-display: 'Syne', sans-serif;
       --font-body:    'DM Sans', sans-serif;
+      --topbar-h:    64px;
+      --tabstrip-h:  48px;
     }
     html, body, #root { height: 100%; }
     body {
@@ -55,17 +57,34 @@
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 99px; }
     button { cursor: pointer; font-family: var(--font-body); border: none; background: none; }
-    /* Prevent Google Translate from breaking React */
     .notranslate { -webkit-transform: translateZ(0); }
-    /* ── Animations ── */
+
+    /* ── Keyframes ── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
+      from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideRight {
+      from { opacity: 0; transform: translateX(-16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -74,239 +93,484 @@
       0%   { background-position: -400px 0; }
       100% { background-position: 400px 0; }
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.5; }
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(255,148,1,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(255,148,1,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,148,1,0); }
     }
-    .fade-up { animation: fadeUp 0.45s ease both; }
-    .fade-up-1 { animation-delay: 0.05s; }
-    .fade-up-2 { animation-delay: 0.10s; }
-    .fade-up-3 { animation-delay: 0.15s; }
-    .fade-up-4 { animation-delay: 0.20s; }
-    .fade-up-5 { animation-delay: 0.25s; }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-4px); }
+    }
+    @keyframes progressFill {
+      from { width: 0%; }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes tabSlide {
+      from { opacity: 0; transform: translateX(10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes dotPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.4); opacity: 0.8; }
+    }
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes ripple {
+      0%   { transform: scale(0); opacity: 0.5; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    .fade-up   { animation: fadeUp 0.5s cubic-bezier(.22,.68,0,1.2) both; }
+    .fade-in   { animation: fadeIn 0.4s ease both; }
+    .scale-in  { animation: scaleIn 0.4s cubic-bezier(.22,.68,0,1.2) both; }
+    .slide-r   { animation: slideRight 0.4s cubic-bezier(.22,.68,0,1.2) both; }
+    .d1 { animation-delay: 0.04s; }
+    .d2 { animation-delay: 0.08s; }
+    .d3 { animation-delay: 0.13s; }
+    .d4 { animation-delay: 0.18s; }
+    .d5 { animation-delay: 0.24s; }
+    .d6 { animation-delay: 0.30s; }
 
     /* ── Layout ── */
-    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+
+    /* Decorative background blobs */
+    .app::before {
+      content: '';
+      position: fixed; top: -80px; right: -60px;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(255,148,1,0.10) 0%, transparent 70%);
+      border-radius: 50%; pointer-events: none; z-index: 0;
+    }
+    .app::after {
+      content: '';
+      position: fixed; bottom: -60px; left: -40px;
+      width: 240px; height: 240px;
+      background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+      border-radius: 50%; pointer-events: none; z-index: 0;
+    }
+
+    /* ── Topbar ── */
     .topbar {
-      display: flex; align-items: center; gap: 16px;
-      padding: 0 28px; height: 64px; min-height: 64px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 20px; height: var(--topbar-h); min-height: var(--topbar-h);
       background: var(--card);
       border-bottom: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      z-index: 10;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      z-index: 100; position: relative;
+      animation: slideDown 0.4s cubic-bezier(.22,.68,0,1.2) both;
     }
-    .topbar-logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--brand); letter-spacing: -0.5px; }
-    .topbar-sep { width: 1px; height: 24px; background: var(--border); }
-    .topbar-merchant { font-size: 14px; font-weight: 600; color: var(--text-2); }
-    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .topbar-logo {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: floatY 3s ease-in-out infinite;
+    }
+    .topbar-sep { width: 1px; height: 22px; background: var(--border); }
+    .topbar-merchant { font-size: 13px; font-weight: 600; color: var(--text-2); }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
     .btn-icon {
       display: flex; align-items: center; justify-content: center;
-      width: 38px; height: 38px; border-radius: 10px;
+      width: 36px; height: 36px; border-radius: 10px;
       background: var(--brand-light); color: var(--brand);
-      transition: background 0.2s, transform 0.15s;
+      transition: all 0.25s cubic-bezier(.22,.68,0,1.2);
+      position: relative; overflow: hidden;
     }
-    .btn-icon:hover { background: #FFE4D6; transform: scale(1.06); }
+    .btn-icon:hover { background: #FFE4B5; transform: scale(1.08) rotate(-3deg); }
+    .btn-icon:active { transform: scale(0.94); }
+
     .btn-primary {
       display: flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 10px;
-      background: var(--brand); color: #fff;
-      font-weight: 600; font-size: 13.5px;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 2px 8px rgba(255,107,53,0.25);
+      padding: 9px 16px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff; font-weight: 700; font-size: 13px;
+      transition: all 0.25s cubic-bezier(.22,.68,0,1.2);
+      box-shadow: 0 3px 12px rgba(255,148,1,0.3);
+      position: relative; overflow: hidden;
     }
-    .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,107,53,0.35); }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0.15);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,148,1,0.4); }
+    .btn-primary:active { transform: translateY(0) scale(0.97); }
 
-    /* ── Tabs ── */
+    /* ── Tab Strip ── */
     .tab-strip {
       display: flex; align-items: center; gap: 2px;
-      padding: 0 28px;
+      padding: 0 16px;
       background: var(--card);
       border-bottom: 1px solid var(--border);
       overflow-x: auto; scrollbar-width: none;
+      height: var(--tabstrip-h); min-height: var(--tabstrip-h);
+      z-index: 50; position: relative;
+      animation: slideDown 0.45s cubic-bezier(.22,.68,0,1.2) 0.05s both;
     }
     .tab-strip::-webkit-scrollbar { display: none; }
     .tab-btn {
-      display: flex; align-items: center; gap: 7px;
-      padding: 14px 18px; border-bottom: 2.5px solid transparent;
-      font-size: 13.5px; font-weight: 600; color: var(--text-2);
-      transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 14px; border-bottom: 2.5px solid transparent;
+      font-size: 13px; font-weight: 600; color: var(--text-2);
+      transition: all 0.25s ease; white-space: nowrap;
+      border-radius: 0; position: relative;
     }
+    .tab-btn::after {
+      content: ''; position: absolute; bottom: -1px; left: 50%; right: 50%;
+      height: 2.5px; background: var(--brand);
+      border-radius: 2px 2px 0 0;
+      transition: all 0.3s cubic-bezier(.22,.68,0,1.2);
+    }
+    .tab-btn.active::after { left: 0; right: 0; }
     .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .tab-btn.active { color: var(--brand); border-bottom-color: transparent; }
+    .tab-btn svg { transition: transform 0.3s cubic-bezier(.22,.68,0,1.2); }
+    .tab-btn.active svg { transform: scale(1.15); }
 
     /* ── Content ── */
-    .main { flex: 1; overflow-y: auto; }
-    .tab-content { padding: 28px; max-width: 1280px; margin: 0 auto; }
+    .main { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; z-index: 1; }
+    .tab-content { padding: 20px 20px 32px; max-width: 1280px; margin: 0 auto; }
 
     /* ── Period Toggle ── */
     .period-toggle {
-      display: inline-flex; background: #EDECEA; border-radius: 10px; padding: 3px; gap: 2px;
+      display: inline-flex; background: #EDECEA; border-radius: 12px; padding: 3px; gap: 2px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
     }
     .period-btn {
-      padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-2);
-      transition: all 0.2s;
+      padding: 7px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 700; color: var(--text-2);
+      transition: all 0.3s cubic-bezier(.22,.68,0,1.2);
     }
     .period-btn.active {
       background: var(--card); color: var(--brand);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transform: scale(1.02);
     }
 
     /* ── Cards ── */
     .card {
       background: var(--card); border-radius: var(--radius-lg);
       border: 1px solid var(--border); box-shadow: var(--shadow);
+      transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(.22,.68,0,1.2);
     }
+    .card:hover { box-shadow: var(--shadow-md); }
+
     .stat-card {
       background: var(--card); border-radius: var(--radius-lg);
       border: 1px solid var(--border); border-left: 4px solid;
-      padding: 22px 24px; box-shadow: var(--shadow);
+      padding: 18px 20px; box-shadow: var(--shadow);
+      transition: all 0.3s cubic-bezier(.22,.68,0,1.2);
+      position: relative; overflow: hidden;
     }
-    .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-2); margin-bottom: 6px; }
-    .stat-value { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+    .stat-card::before {
+      content: ''; position: absolute; top: -30px; right: -20px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: currentColor; opacity: 0.05;
+      transition: transform 0.4s ease;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .stat-card:hover::before { transform: scale(1.4); }
+
+    .stat-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.9px; color: var(--text-2); margin-bottom: 6px; }
+    .stat-value { font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -1px; animation: countUp 0.5s ease both; }
     .stat-sub   { font-size: 12px; color: var(--text-2); margin-top: 4px; }
 
-    /* ── Grid ── */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    /* ── Grids ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
-    /* ── Section Title ── */
     .section-title {
-      font-size: 11px; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 1px; color: var(--text-2); margin: 24px 0 14px;
+      font-size: 10.5px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-2); margin: 22px 0 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
     /* ── Venue Card ── */
-    .venue-card { padding: 20px 22px; margin-bottom: 14px; }
-    .venue-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .venue-card { padding: 18px 20px; margin-bottom: 12px; }
+    .venue-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.09); }
+    .venue-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .icon-wrap {
-      width: 46px; height: 46px; border-radius: 14px;
+      width: 44px; height: 44px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: transform 0.3s cubic-bezier(.22,.68,0,1.2);
     }
-    .venue-name { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text); }
-    .venue-addr { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
-    .earning-pill { padding: 6px 14px; border-radius: 99px; font-weight: 800; font-size: 15px; margin-left: auto; }
+    .venue-card:hover .icon-wrap { transform: scale(1.1) rotate(-5deg); }
+    .venue-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
+    .venue-addr { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+    .earning-pill {
+      padding: 6px 14px; border-radius: 99px; font-weight: 800; font-size: 15px; margin-left: auto;
+      transition: transform 0.25s ease;
+    }
+    .venue-card:hover .earning-pill { transform: scale(1.05); }
     .progress-track { height: 8px; background: #EDECEA; border-radius: 99px; overflow: hidden; margin: 10px 0; }
-    .progress-fill  { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
-    .slot-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .progress-fill  { height: 100%; border-radius: 99px; animation: progressFill 1s cubic-bezier(.22,.68,0,1.2) both; }
+    .slot-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .slot-num { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
-    .slot-lbl { font-size: 11.5px; color: var(--text-2); font-weight: 500; margin-top: 1px; }
+    .slot-lbl { font-size: 11px; color: var(--text-2); font-weight: 500; margin-top: 1px; }
 
     /* ── Booking Row ── */
     .booking-row {
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px 20px; border-bottom: 1px solid var(--border);
-      background: var(--card); transition: background 0.15s;
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      background: var(--card); transition: all 0.2s ease;
     }
     .booking-row:last-child { border-bottom: none; }
-    .booking-row:hover { background: #FAFAF9; }
-    .booking-name { font-weight: 700; font-size: 14.5px; color: var(--text); }
-    .booking-slot { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+    .booking-row:hover { background: #FAFAF9; transform: translateX(3px); }
+    .booking-name { font-weight: 700; font-size: 14px; color: var(--text); }
+    .booking-slot { font-size: 12px; color: var(--text-2); margin-top: 2px; }
     .booking-amt  { font-family: var(--font-display); font-weight: 800; font-size: 15px; }
-    .status-pill  { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
-    .badge-monthly { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:8px; background:var(--brand-light); color:var(--brand); font-size:11px; font-weight:800; }
-    .active-dot { width:7px; height:7px; border-radius:50%; background:var(--success); }
+    .status-pill  { padding: 3px 10px; border-radius: 8px; font-size: 10.5px; font-weight: 800; }
+    .badge-monthly { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:8px; background:var(--brand-light); color:var(--brand); font-size:10.5px; font-weight:800; }
+    .active-dot { width:7px; height:7px; border-radius:50%; background:var(--success); animation: dotPulse 1.5s ease-in-out infinite; }
 
     /* ── Filter chips ── */
-    .filter-row { display: flex; gap: 8px; padding: 16px 0; flex-wrap: wrap; }
+    .filter-row { display: flex; gap: 8px; padding: 12px 0; flex-wrap: wrap; }
     .filter-chip {
-      display: flex; align-items: center; gap: 6px;
-      padding: 7px 15px; border-radius: 99px; border: 1.5px solid;
-      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 99px; border: 1.5px solid;
+      font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.25s cubic-bezier(.22,.68,0,1.2);
+      position: relative; overflow: hidden;
     }
-    .filter-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .filter-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .filter-chip:active { transform: scale(0.96); }
 
     /* ── Type strip ── */
     .type-strip {
       display: flex; background: var(--card); border-radius: var(--radius-lg);
-      border: 1px solid var(--border); padding: 20px 24px; gap: 0; margin: 16px 0;
+      border: 1px solid var(--border); padding: 18px 22px; gap: 0; margin: 14px 0;
+      box-shadow: var(--shadow);
     }
-    .type-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .type-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform 0.25s ease; }
+    .type-item:hover { transform: translateY(-2px); }
     .type-item + .type-item { border-left: 1px solid var(--border); }
-    .type-icon-wrap { width: 42px; height: 42px; border-radius: 13px; display:flex; align-items:center; justify-content:center; }
+    .type-icon-wrap {
+      width: 40px; height: 40px; border-radius: 12px; display:flex; align-items:center; justify-content:center;
+      transition: transform 0.3s cubic-bezier(.22,.68,0,1.2);
+    }
+    .type-item:hover .type-icon-wrap { transform: scale(1.12) rotate(-6deg); }
     .type-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
-    .type-lbl   { font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .type-lbl   { font-size: 11.5px; color: var(--text-2); font-weight: 500; }
 
     /* ── MRR Banner ── */
     .mrr-banner {
       display: flex; align-items: center; justify-content: space-between;
-      background: var(--brand-light); border-radius: var(--radius-lg);
-      border: 1px solid rgba(255,107,53,0.2); padding: 20px 24px; margin-top: 8px;
-      box-shadow: 0 2px 12px rgba(255,107,53,0.08);
+      background: linear-gradient(135deg, #FFF5E6 0%, #FFF0D6 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,148,1,0.25); padding: 18px 22px; margin-top: 8px;
+      box-shadow: 0 4px 16px rgba(255,148,1,0.10);
+      transition: all 0.3s ease;
+      position: relative; overflow: hidden;
     }
-    .mrr-value { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--brand); letter-spacing: -1px; }
+    .mrr-banner::before {
+      content: ''; position: absolute; top: -20px; right: -20px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,148,1,0.15), transparent 70%);
+    }
+    .mrr-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,148,1,0.15); }
+    .mrr-value { font-family: var(--font-display); font-size: 26px; font-weight: 900; color: var(--brand); letter-spacing: -1px; }
 
     /* ── Slot visual ── */
     .slot-grid { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0; }
-    .slot-box  { width: 22px; height: 22px; border-radius: 6px; border: 1px solid; display:flex; align-items:center; justify-content:center; }
+    .slot-box  {
+      width: 22px; height: 22px; border-radius: 6px; border: 1px solid;
+      display:flex; align-items:center; justify-content:center;
+      transition: transform 0.2s ease;
+      animation: scaleIn 0.3s ease both;
+    }
+    .slot-box:hover { transform: scale(1.2); z-index: 1; }
     .slot-dot  { width: 9px; height: 9px; border-radius: 50%; }
-    .legend-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .legend-row { display: flex; gap: 12px; flex-wrap: wrap; }
     .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); font-weight: 500; }
     .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
 
     /* ── Monthly cards ── */
-    .m-card { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--card); overflow: hidden; margin-bottom: 14px; box-shadow: var(--shadow); }
-    .m-card-header { display:flex; align-items:center; gap:14px; padding:18px 20px; }
-    .m-card-body   { padding: 0 20px 18px; }
-    .m-stats-row   { display:flex; background:#F7F6F3; border-radius:12px; padding:12px 16px; }
+    .m-card { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--card); overflow: hidden; margin-bottom: 12px; box-shadow: var(--shadow); transition: all 0.3s ease; }
+    .m-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .m-card-header { display:flex; align-items:center; gap:12px; padding:16px 18px; }
+    .m-card-body   { padding: 0 18px 16px; }
+    .m-stats-row   { display:flex; background:#F7F6F3; border-radius:12px; padding:12px 14px; }
     .m-stat-item   { flex:1; text-align:center; }
     .m-stat-num    { font-family:var(--font-display); font-size:18px; font-weight:800; }
-    .m-stat-lbl    { font-size:11px; color:var(--text-2); margin-top:2px; }
+    .m-stat-lbl    { font-size:10.5px; color:var(--text-2); margin-top:2px; }
     .m-stat-divider{ width:1px; background:var(--border); margin:2px 0; }
-    .enabled-pill  { padding:3px 12px; border-radius:99px; font-size:11.5px; font-weight:800; margin-left:auto; }
+    .enabled-pill  { padding:3px 12px; border-radius:99px; font-size:11px; font-weight:800; margin-left:auto; }
 
     /* ── Dry Cleaning ── */
-    .dry-inner-tabs { display:flex; align-items:center; gap:4px; padding:12px 28px; background:var(--card); border-bottom:1px solid var(--border); }
-    .dry-inner-btn  { padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600; color:var(--text-2); transition:all 0.2s; }
-    .dry-inner-btn.active { background:var(--brand-light); color:var(--brand); }
-    .shop-card { background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); margin-bottom:14px; overflow:hidden; box-shadow:var(--shadow); }
-    .shop-header { display:flex; align-items:center; gap:12px; padding:18px 20px; cursor:pointer; transition:background 0.15s; }
+    .dry-inner-tabs { display:flex; align-items:center; gap:4px; padding:10px 20px; background:var(--card); border-bottom:1px solid var(--border); }
+    .dry-inner-btn  { padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; color:var(--text-2); transition:all 0.25s cubic-bezier(.22,.68,0,1.2); }
+    .dry-inner-btn.active { background:var(--brand-light); color:var(--brand); transform: scale(1.03); }
+    .dry-inner-btn:hover { color: var(--text); }
+    .shop-card { background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow); transition:all 0.3s ease; }
+    .shop-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .shop-header { display:flex; align-items:center; gap:12px; padding:16px 18px; cursor:pointer; transition:background 0.15s; }
     .shop-header:hover { background:#FAFAF9; }
-    .shop-status-strip { display:flex; background:#F7F6F3; padding:12px 20px; }
+    .shop-status-strip { display:flex; background:#F7F6F3; padding:12px 18px; }
     .shop-status-item  { flex:1; text-align:center; }
     .shop-status-num   { font-family:var(--font-display); font-size:18px; font-weight:800; }
-    .shop-status-lbl   { font-size:11px; color:var(--text-2); }
-    .order-row { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--card); }
+    .shop-status-lbl   { font-size:10.5px; color:var(--text-2); }
+    .order-row { display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid var(--border); background:var(--card); transition:all 0.2s ease; }
     .order-row:last-child { border-bottom:none; }
+    .order-row:hover { background:#FAFAF9; transform:translateX(3px); }
     .order-icon-wrap { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .cat-bar-bg   { height:7px; background:#EDECEA; border-radius:4px; overflow:hidden; margin:5px 0; }
-    .cat-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
-    .pipeline-card  { display:flex; background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); padding:20px; margin-bottom:14px; box-shadow:var(--shadow); }
-    .pipeline-item  { flex:1; text-align:center; }
-    .pipeline-num   { font-family:var(--font-display); font-size:28px; font-weight:900; }
-    .pipeline-lbl   { font-size:12px; color:var(--text-2); margin-top:3px; }
+    .cat-bar-fill { height:100%; border-radius:4px; animation: progressFill 1s cubic-bezier(.22,.68,0,1.2) both; }
+    .pipeline-card  { display:flex; background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); padding:18px; margin-bottom:12px; box-shadow:var(--shadow); }
+    .pipeline-item  { flex:1; text-align:center; transition:transform 0.25s ease; }
+    .pipeline-item:hover { transform:translateY(-3px); }
+    .pipeline-num   { font-family:var(--font-display); font-size:26px; font-weight:900; }
+    .pipeline-lbl   { font-size:11.5px; color:var(--text-2); margin-top:3px; }
     .pipeline-div   { width:1px; background:var(--border); margin:4px 0; }
 
-    /* ── Loading / Error states ── */
+    /* ── States ── */
     .center-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:14px; padding:40px; }
-    .spin { animation: spin 0.9s linear infinite; }
+    .spin { animation: spin 0.8s linear infinite; }
     .skeleton {
       background: linear-gradient(90deg, #EDECEA 25%, #F7F6F3 50%, #EDECEA 75%);
       background-size: 800px 100%; animation: shimmer 1.4s infinite; border-radius: 8px;
     }
 
-    /* ── SVG Download btn ── */
+    /* ── Download btn ── */
     .btn-download {
       display:flex; align-items:center; gap:6px;
-      padding:7px 15px; border-radius:10px;
+      padding:7px 13px; border-radius:10px;
       background:var(--card); border:1.5px solid var(--border);
-      font-size:13px; font-weight:600; color:var(--text-2);
-      transition:all 0.2s;
+      font-size:12.5px; font-weight:600; color:var(--text-2);
+      transition:all 0.25s cubic-bezier(.22,.68,0,1.2);
     }
-    .btn-download:hover { border-color:var(--brand); color:var(--brand); background:var(--brand-light); }
+    .btn-download:hover { border-color:var(--brand); color:var(--brand); background:var(--brand-light); transform:translateY(-1px); }
+
+    /* ── Chart card ── */
+    .chart-card {
+      padding: 18px 20px; margin-bottom: 12px;
+      position: relative; overflow: hidden;
+    }
+    .chart-card::before {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--blue));
+      background-size: 200% 100%; animation: gradientShift 3s ease infinite;
+    }
+
+    /* ── Mobile Nav (bottom) ── */
+    .mobile-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 8px 4px 12px;
+      z-index: 200;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    }
+    .mobile-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+    .mobile-nav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 12px; border-radius: 12px; flex: 1;
+      font-size: 10px; font-weight: 700; color: var(--text-2);
+      transition: all 0.25s cubic-bezier(.22,.68,0,1.2);
+      position: relative;
+    }
+    .mobile-nav-btn.active {
+      color: var(--brand);
+    }
+    .mobile-nav-btn.active .mobile-nav-icon {
+      background: var(--brand-light); transform: translateY(-2px);
+    }
+    .mobile-nav-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s cubic-bezier(.22,.68,0,1.2);
+    }
+    .mobile-nav-indicator {
+      position: absolute; top: 4px; right: 12px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--brand);
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
 
     /* ── Responsive ── */
-    @media (max-width: 900px) {
+    @media (max-width: 768px) {
+      :root { --topbar-h: 56px; --tabstrip-h: 0px; }
+      .tab-strip { display: none; }
+      .mobile-nav { display: block; }
+      .main { padding-bottom: 76px; }
+      .tab-content { padding: 14px 14px 24px; }
+      .topbar { padding: 0 14px; height: var(--topbar-h); }
+      .topbar-logo { font-size: 18px; }
+      .topbar-merchant { display: none; }
       .grid-4 { grid-template-columns: 1fr 1fr; }
       .grid-3 { grid-template-columns: 1fr 1fr; }
-      .tab-content { padding: 16px; }
-      .topbar { padding: 0 16px; }
-      .tab-strip { padding: 0 16px; }
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .stat-value { font-size: 24px; }
+      .type-strip { flex-direction: row; padding: 14px 16px; }
+      .mrr-banner { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .period-toggle { width: 100%; }
+      .period-btn { flex: 1; text-align: center; }
+      .filter-row { gap: 6px; padding: 8px 0; }
+      .filter-chip { padding: 6px 12px; font-size: 12px; }
+      .booking-row { padding: 12px 14px; gap: 10px; }
+      .venue-card { padding: 14px 16px; }
+      .pipeline-num { font-size: 22px; }
+      .shop-header { padding: 14px 16px; }
     }
-    @media (max-width: 600px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-      .type-strip { flex-direction: column; gap: 12px; }
-      .type-item + .type-item { border-left: none; border-top: 1px solid var(--border); padding-top: 12px; }
+
+    @media (max-width: 480px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .type-strip { gap: 0; }
+      .type-item + .type-item { border-left: 1px solid var(--border); }
+      .slot-grid .slot-box { width: 20px; height: 20px; }
+      .dry-inner-tabs { padding: 8px 14px; gap: 2px; }
+      .dry-inner-btn { padding: 6px 12px; font-size: 12px; }
+    }
+
+    /* Floating action indicator */
+    .fab-indicator {
+      position: fixed; bottom: 90px; right: 18px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(255,148,1,0.4);
+      z-index: 150; display: none;
+      animation: floatY 2s ease-in-out infinite;
+    }
+    @media (max-width: 768px) {
+      .fab-indicator { display: flex; }
+    }
+
+    /* Pull-to-refresh indicator */
+    .ptr-indicator {
+      text-align: center; padding: 12px;
+      font-size: 12px; color: var(--text-2); font-weight: 600;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Smooth page transitions */
+    .page-enter { animation: tabSlide 0.35s cubic-bezier(.22,.68,0,1.2) both; }
+
+    /* Touch feedback */
+    @media (hover: none) {
+      .stat-card:active { transform: scale(0.97); }
+      .card:active { transform: scale(0.99); }
+      .btn-download:active { transform: scale(0.97); }
+      .venue-card:hover { transform: none; }
+      .booking-row:hover { transform: none; }
+    }
+
+    /* Safe area padding for notched phones */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .mobile-nav { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
     }
   </style>
 </head>
@@ -314,96 +578,40 @@
 <div id="root" class="notranslate"></div>
 
 <script type="text/babel">
-// ══════════════════════════════════════════════════════════
-// GLOBAL ERROR CATCH — shows crash details instead of white screen
-// ══════════════════════════════════════════════════════════
 window.onerror = (msg, src, line, col, err) => {
-  // Ignore "Script error." — this is from cross-origin scripts (e.g. Google Translate)
-  // and has no useful info. Don't crash the page for it.
-  if (msg === 'Script error.' || !src) {
-    console.warn('Ignored cross-origin script error (likely Google Translate)');
-    return true; // suppressed
-  }
+  if (msg === 'Script error.' || !src) { console.warn('Ignored cross-origin script error'); return true; }
   console.error('JS Error:', msg, src, line, col, err);
   return false;
 };
-
 window.addEventListener('unhandledrejection', (e) => {
   console.error('Unhandled promise rejection:', e.reason);
-  const root = document.getElementById('root');
-  if (root && root.innerHTML.trim() === '' || root.innerHTML.includes('Loading')) {
-    root.innerHTML = `
-      <div style="font-family:monospace;padding:24px;max-width:600px;margin:40px auto">
-        <div style="color:#EF4444;font-size:18px;font-weight:700;margin-bottom:12px">⚠️ API / Promise Error</div>
-        <div style="background:#FFF1F1;border:1px solid #FCA5A5;border-radius:8px;padding:16px;font-size:13px;word-break:break-all;line-height:1.7">
-          ${String(e.reason?.message || e.reason || 'Unknown error')}
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:#78716C">
-          This is usually a CORS error or invalid API response.<br/>
-          Check that your backend allows: vervoer-merchant-dashboad.vercel.app
-        </div>
-        <button onclick="location.reload()" style="margin-top:16px;background:#FF6B35;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">
-          Reload
-        </button>
-      </div>`;
-  }
 });
 
-// ══════════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════════
 const API_BASE_URL = 'https://vervoer-backend2.onrender.com/api';
-
-// Parse URL params: ?token=JWT&merchantId=xxx
-// From your RN app call:
-//   WebBrowser.openBrowserAsync(`https://your-vercel-app.vercel.app?token=${token}&merchantId=${user._id}`)
 const urlParams   = new URLSearchParams(window.location.search);
 const AUTH_TOKEN  = urlParams.get('token') || '';
 const MERCHANT_ID = urlParams.get('merchantId') || '';
 
-// api(path) calls API_BASE_URL + path directly
-// e.g. api('/merchants/stats') => https://vervoer-backend2.onrender.com/api/merchants/stats
 const api = async (path) => {
   const url = `${API_BASE_URL}${path}`;
-  console.log('[API] GET', url);
-  
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
-  
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Origin': window.location.origin,
-      }
+      headers: { 'Authorization': `Bearer ${AUTH_TOKEN}`, 'Content-Type': 'application/json' }
     });
     clearTimeout(timeout);
-    
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      console.error('[API] Error response:', res.status, body);
-      throw new Error(`${res.status} ${res.statusText}: ${body.slice(0,200)}`);
-    }
-    
+    if (!res.ok) { const body = await res.text().catch(() => ''); throw new Error(`${res.status} ${res.statusText}: ${body.slice(0,200)}`); }
     const json = await res.json();
-    console.log('[API] Success:', path, json);
     return json?.data ?? json;
-    
   } catch(err) {
     clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Request timed out after 15s. Backend may be sleeping (Render free tier).');
-    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-      throw new Error('CORS blocked or network error. Make sure https://vervoer-merchant-dashboad.vercel.app is in your backend CORS allowlist.');
-    }
+    if (err.name === 'AbortError') throw new Error('Request timed out after 15s.');
     throw err;
   }
 };
 
-// ══════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════
 const fmtCurrency = (n = 0) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Number(n).toFixed(0)}`;
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '—';
 const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }) : '';
@@ -430,9 +638,6 @@ const STATUS_META = {
   rejected:            { label:'Rejected',      color:'var(--error)',   bg:'var(--error-bg)' },
 };
 
-// ══════════════════════════════════════════════════════════
-// SVG DOWNLOAD UTILITY
-// ══════════════════════════════════════════════════════════
 const downloadSVG = (svgId, filename) => {
   const el = document.getElementById(svgId);
   if (!el) return;
@@ -440,19 +645,17 @@ const downloadSVG = (svgId, filename) => {
   const blob = new Blob([svgData], { type:'image/svg+xml' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = filename || 'chart.svg';
-  a.click(); URL.revokeObjectURL(url);
+  a.href = url; a.download = filename || 'chart.svg'; a.click(); URL.revokeObjectURL(url);
 };
 
-// Generate SVG for earnings chart
 const buildEarningsSVG = (venues, period) => {
   if (!venues?.length) return null;
-  const W = 600, H = 240, PL = 60, PR = 20, PT = 20, PB = 40;
+  const W = 600, H = 220, PL = 60, PR = 20, PT = 20, PB = 44;
   const vals = venues.map(v => v.earnings[period]);
   const max  = Math.max(...vals, 1);
-  const barW = Math.floor((W - PL - PR) / venues.length * 0.6);
+  const barW = Math.floor((W - PL - PR) / venues.length * 0.55);
   const gap  = (W - PL - PR) / venues.length;
-  const COLORS = ['var(--brand)','var(--blue)','var(--purple)','var(--teal)','var(--success)'];
+  const COLORS = ['#FF9401','#3B82F6','#8B5CF6','#14B8A6','#22C55E'];
 
   const bars = venues.map((v, i) => {
     const x = PL + i * gap + (gap - barW) / 2;
@@ -461,18 +664,18 @@ const buildEarningsSVG = (venues, period) => {
     const col = COLORS[i % COLORS.length];
     const label = v.name.length > 10 ? v.name.slice(0,10)+'…' : v.name;
     return `
-      <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="6" fill="${col}" opacity="0.85"/>
-      <text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${fmtCurrency(vals[i])}</text>
-      <text x="${x + barW/2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#78716C">${label}</text>
+      <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="8" fill="${col}" opacity="0.9"/>
+      <text x="${x + barW/2}" y="${y - 7}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${fmtCurrency(vals[i])}</text>
+      <text x="${x + barW/2}" y="${H - 10}" text-anchor="middle" font-size="10" fill="#808080">${label}</text>
     `;
   }).join('');
 
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => {
+  const ticks = [0, 0.5, 1].map(t => {
     const val = max * t;
     const y   = PT + (H - PT - PB) * (1 - t);
     return `
-      <line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="#EDECEA" stroke-width="1"/>
-      <text x="${PL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#78716C">${fmtCurrency(val)}</text>
+      <line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="#EDECEA" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="${PL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#808080">${fmtCurrency(val)}</text>
     `;
   }).join('');
 
@@ -485,12 +688,8 @@ const buildEarningsSVG = (venues, period) => {
   );
 };
 
-// ══════════════════════════════════════════════════════════
-// SHARED COMPONENTS
-// ══════════════════════════════════════════════════════════
 const { useState, useEffect, useCallback, useRef } = React;
 
-// Inline SVG icons — no dependency on lucide UMD structure
 const ICONS = {
   LayoutDashboard: ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   Grid3x3:         ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>,
@@ -498,7 +697,7 @@ const ICONS = {
   Repeat:          ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
   Shirt:           ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>,
   Car:             ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>,
-  Warehouse:       ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect x="8" y="10" width="8" height="14"/></svg>,
+  Warehouse:       ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"/><path d="M6 18h12M6 14h12"/><rect x="8" y="10" width="8" height="14"/></svg>,
   Home:            ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   Download:        ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   RefreshCw:       ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
@@ -514,6 +713,7 @@ const ICONS = {
   AlertTriangle:   ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
   CalendarX2:      ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="m14 14-4 4m0-4 4 4"/></svg>,
   HelpCircle:      ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  Zap:             ({size,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
 };
 
 const Icon = ({ name, size=18, color='currentColor' }) => {
@@ -538,10 +738,16 @@ const VenueIcon = ({ type, size=18, color }) => {
 
 const SectionTitle = ({ children }) => <div className="section-title">{children}</div>;
 
-const Spinner = ({ size=32 }) => (
+const Spinner = ({ size=36 }) => (
   <svg className="spin" width={size} height={size} viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="12" r="10" stroke="#EDECEA" strokeWidth="3"/>
-    <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--brand)" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M12 2a10 10 0 0 1 10 10" stroke="url(#spinGrad)" strokeWidth="3" strokeLinecap="round"/>
+    <defs>
+      <linearGradient id="spinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#FF9401"/>
+        <stop offset="100%" stopColor="#F99026"/>
+      </linearGradient>
+    </defs>
   </svg>
 );
 
@@ -551,34 +757,37 @@ const Spinner = ({ size=32 }) => (
 const OverviewTab = ({ data, period, onPeriodChange }) => {
   const totalMRR = (data.venues||[]).filter(v=>v.monthlyChargeEnabled)
     .reduce((s,v)=>s+v.monthlyRate*v.activeMonthlySubscriptions, 0);
-
   const svgEl = buildEarningsSVG(data.venues, period);
 
   return (
-    <div className="tab-content fade-up">
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:10}}>
+    <div className="tab-content page-enter">
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:10}}>
         <PeriodToggle period={period} onChange={onPeriodChange}/>
         <button className="btn-download" onClick={() => downloadSVG('svg-earnings', `earnings-${period}.svg`)}>
-          <Icon name="Download" size={14}/> Export Chart SVG
+          <Icon name="Download" size={13}/> Export SVG
         </button>
       </div>
 
-      {/* Hero stats */}
-      <div className="grid-2 fade-up fade-up-1" style={{marginBottom:16}}>
-        <div className="stat-card fade-up" style={{borderLeftColor:'var(--brand)'}}>
+      <div className="grid-2 fade-up" style={{marginBottom:12}}>
+        <div className="stat-card d1 fade-up" style={{borderLeftColor:'var(--brand)'}}>
+          <div style={{width:30,height:30,borderRadius:10,background:'var(--brand-light)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+            <Icon name="TrendingUp" size={15} color="var(--brand)"/>
+          </div>
           <div className="stat-label">Total Revenue</div>
           <div className="stat-value" style={{color:'var(--brand)'}}>{fmtCurrency(data.totalEarnings?.[period]||0)}</div>
           <div className="stat-sub">{PERIOD_LABEL[period]}</div>
         </div>
-        <div className="stat-card fade-up fade-up-1" style={{borderLeftColor:'var(--blue)'}}>
+        <div className="stat-card d2 fade-up" style={{borderLeftColor:'var(--blue)'}}>
+          <div style={{width:30,height:30,borderRadius:10,background:'var(--blue-bg)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+            <Icon name="BarChart2" size={15} color="var(--blue)"/>
+          </div>
           <div className="stat-label">Total Bookings</div>
           <div className="stat-value" style={{color:'var(--blue)'}}>{data.totalBookings?.[period]||0}</div>
           <div className="stat-sub">{PERIOD_LABEL[period]}</div>
         </div>
       </div>
 
-      {/* Type strip */}
-      <div className="type-strip fade-up fade-up-2">
+      <div className="type-strip d3 fade-up">
         {['parking','garage','residence'].map(type => {
           const total = (data.venues||[]).filter(v=>v.type===type).reduce((s,v)=>s+v.earnings[period],0);
           return (
@@ -587,32 +796,33 @@ const OverviewTab = ({ data, period, onPeriodChange }) => {
                 <VenueIcon type={type} size={17} color={VENUE_COLOR[type]}/>
               </div>
               <div className="type-value" style={{color:VENUE_COLOR[type]}}>{fmtCurrency(total)}</div>
-              <div className="type-lbl">{type.charAt(0).toUpperCase()+type.slice(1)}s</div>
+              <div className="type-lbl" style={{textTransform:'capitalize'}}>{type}s</div>
             </div>
           );
         })}
       </div>
 
-      {/* Earnings chart */}
       {svgEl && (
-        <div className="card fade-up fade-up-3" style={{padding:'20px 22px', marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700,color:'var(--text-2)',marginBottom:12}}>Revenue by Venue — {PERIOD_LABEL[period]}</div>
+        <div className="card chart-card d4 fade-up" style={{marginBottom:12}}>
+          <div style={{fontSize:12.5,fontWeight:700,color:'var(--text-2)',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
+            <Icon name="BarChart2" size={13} color="var(--brand)"/>
+            Revenue by Venue — {PERIOD_LABEL[period]}
+          </div>
           {svgEl}
         </div>
       )}
 
       <SectionTitle>Your Venues</SectionTitle>
-      {(data.venues||[]).map((v,i) => <VenueCard key={v.id||i} venue={v} period={period}/>)}
+      {(data.venues||[]).map((v,i) => <VenueCard key={v.id||i} venue={v} period={period} delay={i}/>)}
 
-      {/* MRR Banner */}
       <div className="mrr-banner fade-up">
-        <div style={{display:'flex', alignItems:'center', gap:14}}>
-          <div className="icon-wrap" style={{background:'var(--brand-light)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:12}}>
+          <div className="icon-wrap" style={{background:'rgba(255,148,1,0.15)', animation:'pulse-ring 2s ease-in-out infinite'}}>
             <Icon name="Repeat" size={20} color="var(--brand)"/>
           </div>
           <div>
-            <div style={{fontWeight:700, fontSize:14.5, color:'var(--text)'}}>Monthly Recurring Revenue</div>
-            <div style={{fontSize:12.5, color:'var(--text-2)', marginTop:2}}>All venues with monthly plans</div>
+            <div style={{fontWeight:700, fontSize:14, color:'var(--text)'}}>Monthly Recurring Revenue</div>
+            <div style={{fontSize:12, color:'var(--text-2)', marginTop:2}}>All venues with monthly plans</div>
           </div>
         </div>
         <div className="mrr-value">${totalMRR.toLocaleString()}</div>
@@ -621,30 +831,33 @@ const OverviewTab = ({ data, period, onPeriodChange }) => {
   );
 };
 
-const VenueCard = ({ venue, period }) => {
+const VenueCard = ({ venue, period, delay=0 }) => {
   const vc  = VENUE_COLOR[venue.type];
   const vbg = VENUE_BG[venue.type];
   const pct = venue.slots?.total > 0 ? Math.round((venue.slots.booked/venue.slots.total)*100) : 0;
+  const delayClass = `d${Math.min(delay+1, 6)}`;
 
   return (
-    <div className="card venue-card fade-up" style={{marginBottom:14}}>
+    <div className={`card venue-card ${delayClass} fade-up`}>
       <div className="venue-header">
         <div className="icon-wrap" style={{background:vbg}}>
           <VenueIcon type={venue.type} size={20} color={vc}/>
         </div>
-        <div style={{flex:1}}>
-          <div className="venue-name">{venue.name}</div>
-          <div className="venue-addr">{venue.address}</div>
+        <div style={{flex:1, minWidth:0}}>
+          <div className="venue-name" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{venue.name}</div>
+          <div className="venue-addr" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{venue.address}</div>
         </div>
-        <div className="earning-pill" style={{background:vbg, color:vc}}>
+        <div className="earning-pill" style={{background:vbg, color:vc, flexShrink:0}}>
           {fmtCurrency(venue.earnings?.[period]||0)}
         </div>
       </div>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
-        <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.6,color:'var(--text-2)'}}>Occupancy</span>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+        <span style={{fontSize:10.5,fontWeight:700,textTransform:'uppercase',letterSpacing:0.6,color:'var(--text-2)'}}>Occupancy</span>
         <span style={{fontWeight:800, color:vc, fontSize:14}}>{pct}%</span>
       </div>
-      <div className="progress-track"><div className="progress-fill" style={{width:`${pct}%`, background:vc}}/></div>
+      <div className="progress-track">
+        <div className="progress-fill" style={{width:`${pct}%`, background:`linear-gradient(90deg, ${vc}, ${vc}aa)`}}/>
+      </div>
       <div className="slot-row">
         {[{label:'Booked', value:venue.slots?.booked||0, color:vc},
           {label:'Free',   value:venue.slots?.available||0, color:'var(--success)'},
@@ -655,8 +868,8 @@ const VenueCard = ({ venue, period }) => {
           </div>
         ))}
         {venue.monthlyChargeEnabled && (
-          <div className="badge-monthly" style={{marginLeft:'auto'}}>
-            <Icon name="Repeat" size={10} color="var(--brand)"/>
+          <div className="badge-monthly" style={{marginLeft:'auto', animation:'fadeIn 0.4s ease'}}>
+            <Icon name="Repeat" size={9} color="var(--brand)"/>
             {venue.activeMonthlySubscriptions} monthly
           </div>
         )}
@@ -669,32 +882,28 @@ const VenueCard = ({ venue, period }) => {
 // SLOTS TAB
 // ══════════════════════════════════════════════════════════
 const SlotsTab = ({ data }) => (
-  <div className="tab-content fade-up">
-    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4}}>
-      <SectionTitle>Slot Availability</SectionTitle>
-      <button className="btn-download" onClick={() => downloadSVG('svg-slots', 'slots.svg')}>
-        <Icon name="Download" size={14}/> Export SVG
-      </button>
-    </div>
-    <svg id="svg-slots" style={{display:'none'}}/>
+  <div className="tab-content page-enter">
+    <SectionTitle>Slot Availability</SectionTitle>
     {(data.venues||[]).map((venue,i) => {
       const vc  = VENUE_COLOR[venue.type];
       const vbg = VENUE_BG[venue.type];
       const { booked=0, available=0, total=0 } = venue.slots||{};
       const pct = total > 0 ? Math.round((booked/total)*100) : 0;
       return (
-        <div key={venue.id||i} className="card fade-up" style={{padding:'20px 22px', marginBottom:14}}>
+        <div key={venue.id||i} className={`card fade-up d${Math.min(i+1,6)}`} style={{padding:'18px 20px', marginBottom:12}}>
           <div className="venue-header">
             <div className="icon-wrap" style={{background:vbg}}>
               <VenueIcon type={venue.type} size={20} color={vc}/>
             </div>
-            <div style={{flex:1}}>
-              <div className="venue-name">{venue.name}</div>
+            <div style={{flex:1, minWidth:0}}>
+              <div className="venue-name" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{venue.name}</div>
               <div className="venue-addr">{venue.address}</div>
             </div>
-            <div style={{background:vbg, color:vc, padding:'4px 12px', borderRadius:99, fontWeight:800, fontSize:13}}>{pct}%</div>
+            <div style={{background:vbg, color:vc, padding:'5px 12px', borderRadius:99, fontWeight:800, fontSize:13, flexShrink:0}}>{pct}%</div>
           </div>
-          <div className="progress-track"><div className="progress-fill" style={{width:`${pct}%`, background:vc}}/></div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{width:`${pct}%`, background:`linear-gradient(90deg, ${vc}, ${vc}88)`}}/>
+          </div>
           <div className="slot-grid">
             {Array.from({length:total}).map((_,si) => {
               const isMonthly = venue.monthlyChargeEnabled && si < venue.activeMonthlySubscriptions;
@@ -703,6 +912,7 @@ const SlotsTab = ({ data }) => (
                 <div key={si} className="slot-box" style={{
                   background: isMonthly ? 'var(--brand-light)' : isBooked ? vbg : 'var(--success-bg)',
                   borderColor: isMonthly ? 'var(--brand)' : isBooked ? vc : 'var(--success)',
+                  animationDelay: `${si * 0.02}s`
                 }}>
                   <div className="slot-dot" style={{background: isMonthly ? 'var(--brand)' : isBooked ? vc : 'var(--success)'}}/>
                 </div>
@@ -729,26 +939,26 @@ const SlotsTab = ({ data }) => (
 // ══════════════════════════════════════════════════════════
 // BOOKINGS TAB
 // ══════════════════════════════════════════════════════════
-const BookingRow = ({ booking }) => {
+const BookingRow = ({ booking, index=0 }) => {
   const vc  = VENUE_COLOR[booking.type];
   const vbg = VENUE_BG[booking.type];
   const now = Date.now();
   const isActive = new Date(booking.from).getTime()<=now && new Date(booking.to).getTime()>=now;
 
   return (
-    <div className="booking-row">
-      <div className="icon-wrap" style={{background:vbg, width:40, height:40, borderRadius:12}}>
+    <div className="booking-row" style={{animationDelay:`${index*0.04}s`}}>
+      <div className="icon-wrap" style={{background:vbg, width:40, height:40, borderRadius:12, flexShrink:0}}>
         <VenueIcon type={booking.type} size={16} color={vc}/>
       </div>
-      <div style={{flex:1}}>
-        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap'}}>
-          <span className="booking-name">{booking.customerName}</span>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:3, flexWrap:'wrap'}}>
+          <span className="booking-name" style={{overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'}}>{booking.customerName}</span>
           {booking.isMonthly && <span className="badge-monthly"><Icon name="Repeat" size={9} color="var(--brand)"/> Monthly</span>}
           {isActive && <span className="active-dot" title="Active"/>}
         </div>
         <div className="booking-slot">Slot {booking.slot} · {fmtDate(booking.from)} {fmtTime(booking.from)}</div>
       </div>
-      <div style={{textAlign:'right', display:'flex', flexDirection:'column', gap:5}}>
+      <div style={{textAlign:'right', display:'flex', flexDirection:'column', gap:5, flexShrink:0}}>
         <div className="booking-amt">${Number(booking.amount).toFixed(2)}</div>
         <div className="status-pill" style={{background:statusBg(booking.status), color:statusColor(booking.status)}}>
           {booking.status}
@@ -763,8 +973,8 @@ const BookingsTab = ({ data }) => {
   const filtered = filter==='all' ? (data.recentBookings||[]) : (data.recentBookings||[]).filter(b=>b.type===filter);
 
   return (
-    <div className="tab-content fade-up">
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10}}>
+    <div className="tab-content page-enter">
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8}}>
         <div className="filter-row">
           {['all','parking','garage','residence'].map(f => {
             const active = filter===f;
@@ -773,7 +983,7 @@ const BookingsTab = ({ data }) => {
             return (
               <button key={f} className="filter-chip" onClick={() => setFilter(f)}
                 style={{background: active ? vc : vbg, borderColor: vc, color: active ? '#fff' : vc}}>
-                {f!=='all' && <VenueIcon type={f} size={13} color={active?'#fff':vc}/>}
+                {f!=='all' && <VenueIcon type={f} size={12} color={active?'#fff':vc}/>}
                 {f==='all' ? 'All' : f.charAt(0).toUpperCase()+f.slice(1)}
               </button>
             );
@@ -784,17 +994,17 @@ const BookingsTab = ({ data }) => {
           const blob = new Blob([`Name,Slot,Amount,Status,From\n${rows}`], {type:'text/csv'});
           const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bookings.csv'; a.click();
         }}>
-          <Icon name="Download" size={14}/> Export CSV
+          <Icon name="Download" size={13}/> CSV
         </button>
       </div>
 
       <div className="card" style={{borderRadius:'var(--radius-lg)', overflow:'hidden', marginTop:4}}>
         {filtered.length === 0 ? (
           <div style={{padding:40, textAlign:'center', color:'var(--text-2)'}}>
-            <Icon name="CalendarX2" size={36} color="#D6D3D1"/><br/>
-            <span style={{marginTop:10, display:'block'}}>No bookings found</span>
+            <Icon name="CalendarX2" size={36} color="#D6D3D1"/>
+            <div style={{marginTop:10, fontSize:14}}>No bookings found</div>
           </div>
-        ) : filtered.map(b => <BookingRow key={b._id} booking={b}/>)}
+        ) : filtered.map((b,i) => <BookingRow key={b._id} booking={b} index={i}/>)}
       </div>
     </div>
   );
@@ -808,28 +1018,29 @@ const MonthlyTab = ({ data }) => {
   const totalSubs = (data.venues||[]).filter(v=>v.monthlyChargeEnabled).reduce((s,v)=>s+v.activeMonthlySubscriptions,0);
 
   return (
-    <div className="tab-content fade-up">
-      {/* MRR Hero */}
-      <div className="card" style={{padding:'24px 28px', display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-md)'}}>
-        <div>
+    <div className="tab-content page-enter">
+      <div className="card fade-up" style={{padding:'22px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-md)', position:'relative', overflow:'hidden'}}>
+        <div style={{position:'absolute', top:0, right:0, bottom:0, left:0, background:'linear-gradient(135deg, #FFFBF5 0%, #FFF5E6 100%)', zIndex:0}}/>
+        <div style={{position:'relative', zIndex:1}}>
           <div className="stat-label">Monthly Recurring Revenue</div>
-          <div style={{fontFamily:'var(--font-display)', fontSize:42, fontWeight:900, color:'var(--brand)', letterSpacing:'-1.5px', lineHeight:1.1}}>${totalMRR.toLocaleString()}</div>
+          <div style={{fontFamily:'var(--font-display)', fontSize:40, fontWeight:900, color:'var(--brand)', letterSpacing:'-1.5px', lineHeight:1.1, animation:'countUp 0.6s ease both'}}>${totalMRR.toLocaleString()}</div>
           <div className="stat-sub">{totalSubs} active subscribers</div>
         </div>
-        <div className="icon-wrap" style={{background:'var(--brand-light)', width:56, height:56, borderRadius:18}}>
+        <div style={{position:'relative', zIndex:1, width:56, height:56, borderRadius:18, background:'rgba(255,148,1,0.15)', display:'flex', alignItems:'center', justifyContent:'center', animation:'pulse-ring 2s ease-in-out infinite, floatY 2s ease-in-out infinite', flexShrink:0}}>
           <Icon name="Repeat" size={26} color="var(--brand)"/>
         </div>
       </div>
 
-      {/* Breakdown */}
       {(data.venues||[]).filter(v=>v.monthlyChargeEnabled).length > 0 && (
-        <div className="card" style={{borderRadius:'var(--radius-lg)', overflow:'hidden', marginBottom:14, boxShadow:'var(--shadow)'}}>
+        <div className="card d2 fade-up" style={{borderRadius:'var(--radius-lg)', overflow:'hidden', marginBottom:12}}>
           {(data.venues||[]).filter(v=>v.monthlyChargeEnabled).map((v,i,arr) => (
-            <div key={v.id} style={{display:'flex', alignItems:'center', gap:12, padding:'14px 20px', borderBottom:i<arr.length-1?'1px solid var(--border)':'none'}}>
-              <div style={{width:9, height:9, borderRadius:'50%', background:VENUE_COLOR[v.type], flexShrink:0}}/>
-              <span style={{flex:1, fontWeight:700, fontSize:14}}>{v.name}</span>
-              <span style={{fontSize:13, color:'var(--text-2)'}}>{v.activeMonthlySubscriptions} subs</span>
-              <span style={{fontFamily:'var(--font-display)', fontWeight:800, color:VENUE_COLOR[v.type], fontSize:15, minWidth:65, textAlign:'right'}}>
+            <div key={v.id} style={{display:'flex', alignItems:'center', gap:10, padding:'13px 18px', borderBottom:i<arr.length-1?'1px solid var(--border)':'none', transition:'background 0.2s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#FAFAF9'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <div style={{width:8, height:8, borderRadius:'50%', background:VENUE_COLOR[v.type], flexShrink:0}}/>
+              <span style={{flex:1, fontWeight:700, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{v.name}</span>
+              <span style={{fontSize:12.5, color:'var(--text-2)', flexShrink:0}}>{v.activeMonthlySubscriptions} subs</span>
+              <span style={{fontFamily:'var(--font-display)', fontWeight:800, color:VENUE_COLOR[v.type], fontSize:15, minWidth:60, textAlign:'right', flexShrink:0}}>
                 ${(v.monthlyRate*v.activeMonthlySubscriptions).toLocaleString()}
               </span>
             </div>
@@ -842,23 +1053,23 @@ const MonthlyTab = ({ data }) => {
         const vc  = VENUE_COLOR[venue.type];
         const vbg = VENUE_BG[venue.type];
         return (
-          <div key={venue.id||i} className="m-card fade-up">
+          <div key={venue.id||i} className={`m-card d${Math.min(i+1,6)} fade-up`}>
             <div className="m-card-header">
               <div className="icon-wrap" style={{background:vbg}}>
                 <VenueIcon type={venue.type} size={18} color={vc}/>
               </div>
-              <div style={{flex:1}}>
-                <div className="venue-name">{venue.name}</div>
-                <div className="venue-addr">{venue.type.charAt(0).toUpperCase()+venue.type.slice(1)}</div>
+              <div style={{flex:1, minWidth:0}}>
+                <div className="venue-name" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{venue.name}</div>
+                <div className="venue-addr" style={{textTransform:'capitalize'}}>{venue.type}</div>
               </div>
-              <div className="enabled-pill" style={{background:venue.monthlyChargeEnabled?'var(--success-bg)':'#F7F6F3', color:venue.monthlyChargeEnabled?'var(--success)':'var(--text-2)'}}>
+              <div className="enabled-pill" style={{background:venue.monthlyChargeEnabled?'var(--success-bg)':'#F7F6F3', color:venue.monthlyChargeEnabled?'var(--success)':'var(--text-2)', flexShrink:0}}>
                 {venue.monthlyChargeEnabled ? 'Enabled' : 'Disabled'}
               </div>
             </div>
             {venue.monthlyChargeEnabled && (
               <div className="m-card-body">
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                  <span style={{fontSize:13, fontWeight:600, color:'var(--text-2)'}}>Monthly Rate</span>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+                  <span style={{fontSize:12.5, fontWeight:600, color:'var(--text-2)'}}>Monthly Rate</span>
                   <span style={{fontFamily:'var(--font-display)', fontSize:22, fontWeight:900, color:'var(--brand)'}}>
                     ${venue.monthlyRate}<span style={{fontSize:12, fontWeight:500, color:'var(--text-2)'}}>/mo</span>
                   </span>
@@ -890,10 +1101,10 @@ const MonthlyTab = ({ data }) => {
 // DRY CLEANING TAB
 // ══════════════════════════════════════════════════════════
 const DryCleaningTab = ({ token }) => {
-  const [data, setData]     = useState(null);
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView]     = useState('overview');
-  const [period, setPeriod] = useState('weekly');
+  const [view, setView]       = useState('overview');
+  const [period, setPeriod]   = useState('weekly');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -906,52 +1117,54 @@ const DryCleaningTab = ({ token }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  if (loading) return <div className="center-state"><Spinner/><span style={{color:'var(--text-2)'}}>Loading laundry stats…</span></div>;
-  if (!data)   return <div className="center-state"><Icon name="AlertCircle" size={36} color="var(--error)"/><span style={{color:'var(--text-2)'}}>Could not load dry cleaner stats.</span><button className="btn-primary" onClick={fetchData}><Icon name="RefreshCw" size={14}/>Retry</button></div>;
-  if (!(data.shops||[]).length) return <div className="center-state"><Icon name="ShoppingBag" size={40} color="#D6D3D1"/><span style={{color:'var(--text-2)'}}>No dry cleaning shops registered yet.</span></div>;
+  if (loading) return <div className="center-state"><Spinner/><span style={{color:'var(--text-2)',fontSize:14}}>Loading laundry stats…</span></div>;
+  if (!data)   return <div className="center-state"><Icon name="AlertCircle" size={36} color="var(--error)"/><span style={{color:'var(--text-2)'}}>Could not load stats.</span><button className="btn-primary" onClick={fetchData}><Icon name="RefreshCw" size={14}/>Retry</button></div>;
+  if (!(data.shops||[]).length) return <div className="center-state"><Icon name="ShoppingBag" size={40} color="#D6D3D1"/><span style={{color:'var(--text-2)'}}>No shops registered yet.</span></div>;
 
   const maxCatRevenue = data.categoryBreakdown?.[0]?.totalRevenue || 1;
 
-  const OrderRow = ({ order }) => {
+  const OrderRow = ({ order, index=0 }) => {
     const meta = STATUS_META[order.status] || STATUS_META['pending'];
     return (
-      <div className="order-row">
+      <div className="order-row" style={{animationDelay:`${index*0.04}s`}}>
         <div className="order-icon-wrap" style={{background:meta.bg}}>
           <Icon name="Package" size={15} color={meta.color}/>
         </div>
-        <div style={{flex:1}}>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap'}}>
-            <span style={{fontWeight:700, fontSize:14}}>{order.orderNumber}</span>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{display:'flex', alignItems:'center', gap:7, marginBottom:2, flexWrap:'wrap'}}>
+            <span style={{fontWeight:700, fontSize:13.5}}>{order.orderNumber}</span>
             <div className="status-pill" style={{background:meta.bg, color:meta.color}}>{meta.label}</div>
           </div>
-          <div style={{fontSize:12.5, color:'var(--text-2)'}}>{order.customerName} · {order.itemCount} item{order.itemCount!==1?'s':''}</div>
-          {order.scheduledPickup && <div style={{fontSize:11.5, color:'var(--text-2)', marginTop:2}}>Pickup: {fmtDateTime(order.scheduledPickup)}</div>}
+          <div style={{fontSize:12, color:'var(--text-2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{order.customerName} · {order.itemCount} item{order.itemCount!==1?'s':''}</div>
+          {order.scheduledPickup && <div style={{fontSize:11, color:'var(--text-2)', marginTop:2}}>Pickup: {fmtDateTime(order.scheduledPickup)}</div>}
         </div>
-        <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'var(--brand)'}}>{fmtCurrency(order.totalAmount)}</div>
+        <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:14, color:'var(--brand)', flexShrink:0}}>{fmtCurrency(order.totalAmount)}</div>
       </div>
     );
   };
 
-  const ShopCard = ({ shop }) => {
+  const ShopCard = ({ shop, index=0 }) => {
     const [exp, setExp] = useState(false);
     return (
-      <div className="shop-card fade-up">
+      <div className={`shop-card d${Math.min(index+1,6)} fade-up`}>
         <div className="shop-header" onClick={() => setExp(!exp)}>
           <div className="icon-wrap" style={{background:'var(--brand-light)'}}>
-            <Icon name="ShoppingBag" size={20} color="var(--brand)"/>
+            <Icon name="ShoppingBag" size={19} color="var(--brand)"/>
           </div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:'var(--font-display)', fontSize:16, fontWeight:700}}>{shop.shopname}</div>
-            <div style={{fontSize:12, color:'var(--text-2)', marginTop:2}}>{shop.address?.street||''}{shop.address?.city?`, ${shop.address.city}`:''}</div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontFamily:'var(--font-display)', fontSize:15, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{shop.shopname}</div>
+            <div style={{fontSize:11.5, color:'var(--text-2)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{shop.address?.street||''}{shop.address?.city?`, ${shop.address.city}`:''}</div>
           </div>
-          <div style={{textAlign:'right', marginRight:8}}>
-            <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'var(--brand)'}}>{fmtCurrency(shop.earnings?.[period]||0)}</div>
-            {shop.rating>0 && <div style={{display:'flex',alignItems:'center',gap:3,justifyContent:'flex-end',marginTop:3}}>
-              <Icon name="Star" size={11} color="var(--warning)"/>
-              <span style={{fontSize:12,fontWeight:700,color:'var(--warning)'}}>{shop.rating.toFixed(1)}</span>
+          <div style={{textAlign:'right', marginRight:8, flexShrink:0}}>
+            <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'var(--brand)'}}>{fmtCurrency(shop.earnings?.[period]||0)}</div>
+            {shop.rating>0 && <div style={{display:'flex',alignItems:'center',gap:3,justifyContent:'flex-end',marginTop:2}}>
+              <Icon name="Star" size={10} color="var(--warning)"/>
+              <span style={{fontSize:11.5,fontWeight:700,color:'var(--warning)'}}>{shop.rating.toFixed(1)}</span>
             </div>}
           </div>
-          <Icon name={exp?'ChevronDown':'ChevronRight'} size={16} color="var(--text-2)"/>
+          <div style={{transition:'transform 0.3s ease', transform:exp?'rotate(90deg)':'none', flexShrink:0}}>
+            <Icon name="ChevronRight" size={16} color="var(--text-2)"/>
+          </div>
         </div>
         <div className="shop-status-strip">
           {[{label:'Pending',value:shop.orderStatus?.pending||0,color:'var(--warning)'},
@@ -966,14 +1179,14 @@ const DryCleaningTab = ({ token }) => {
           ))}
         </div>
         {exp && (
-          <div style={{padding:'0 20px 18px', borderTop:'1px solid var(--border)'}}>
+          <div style={{padding:'0 18px 16px', borderTop:'1px solid var(--border)', animation:'fadeUp 0.3s ease'}}>
             {shop.recentOrders?.length > 0 && <>
-              <div style={{fontSize:11,fontWeight:700,color:'var(--text-2)',textTransform:'uppercase',letterSpacing:0.6,margin:'14px 0 8px'}}>Recent Orders</div>
-              {shop.recentOrders.slice(0,3).map(o => <OrderRow key={o._id} order={o}/>)}
+              <div style={{fontSize:10.5,fontWeight:700,color:'var(--text-2)',textTransform:'uppercase',letterSpacing:0.6,margin:'12px 0 8px'}}>Recent Orders</div>
+              {shop.recentOrders.slice(0,3).map((o,i) => <OrderRow key={o._id} order={o} index={i}/>)}
             </>}
             <div style={{display:'flex',alignItems:'center',gap:6,background:'var(--success-bg)',borderRadius:10,padding:10,marginTop:12}}>
               <Icon name="TrendingUp" size={14} color="var(--success)"/>
-              <span style={{flex:1,fontSize:13,color:'var(--text-2)'}}>All-time Revenue</span>
+              <span style={{flex:1,fontSize:12.5,color:'var(--text-2)'}}>All-time Revenue</span>
               <span style={{fontWeight:800,color:'var(--success)'}}>{fmtCurrency(shop.allTimeRevenue)}</span>
             </div>
           </div>
@@ -990,33 +1203,32 @@ const DryCleaningTab = ({ token }) => {
             {v.charAt(0).toUpperCase()+v.slice(1)}
           </button>
         ))}
-        <button className="btn-icon" style={{marginLeft:'auto'}} onClick={fetchData} title="Refresh">
-          <Icon name="RefreshCw" size={15}/>
+        <button className="btn-icon" style={{marginLeft:'auto',width:32,height:32}} onClick={fetchData} title="Refresh">
+          <Icon name="RefreshCw" size={14}/>
         </button>
       </div>
 
       {view==='overview' && (
-        <div className="main"><div className="tab-content fade-up">
+        <div className="main"><div className="tab-content page-enter">
           <PeriodToggle period={period} onChange={setPeriod}/>
-          <div className="grid-4" style={{marginBottom:16, marginTop:12}}>
-            {[{label:'Revenue', value:fmtCurrency(data.totalEarnings?.[period]||0), color:'var(--brand)', icon:'TrendingUp'},
-              {label:'Orders',  value:String(data.totalBookings?.[period]||0),        color:'var(--purple)',icon:'ShoppingBag'},
-              {label:'Avg Order',value:fmtCurrency(data.overallStats?.avgOrderValue||0),color:'var(--teal)',icon:'BarChart2'},
-              {label:'Shops',   value:String(data.overallStats?.totalShops||0),       color:'var(--success)',icon:'Layers'}
-            ].map(item => (
-              <div key={item.label} className="stat-card fade-up" style={{borderLeftColor:item.color}}>
-                <div style={{width:32,height:32,borderRadius:10,background:item.color+'18',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
-                  <Icon name={item.icon} size={16} color={item.color}/>
+          <div className="grid-4" style={{marginBottom:14, marginTop:12}}>
+            {[{label:'Revenue', value:fmtCurrency(data.totalEarnings?.[period]||0), color:'var(--brand)', icon:'TrendingUp', bg:'var(--brand-light)'},
+              {label:'Orders',  value:String(data.totalBookings?.[period]||0),        color:'var(--purple)',icon:'ShoppingBag', bg:'var(--purple-bg)'},
+              {label:'Avg Order',value:fmtCurrency(data.overallStats?.avgOrderValue||0),color:'var(--teal)',icon:'BarChart2', bg:'var(--teal-bg)'},
+              {label:'Shops',   value:String(data.overallStats?.totalShops||0),       color:'var(--success)',icon:'Layers', bg:'var(--success-bg)'}
+            ].map((item,i) => (
+              <div key={item.label} className={`stat-card d${i+1} fade-up`} style={{borderLeftColor:item.color}}>
+                <div style={{width:30,height:30,borderRadius:9,background:item.bg,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+                  <Icon name={item.icon} size={15} color={item.color}/>
                 </div>
                 <div className="stat-label">{item.label}</div>
-                <div className="stat-value" style={{color:item.color, fontSize:26}}>{item.value}</div>
+                <div className="stat-value" style={{color:item.color, fontSize:24}}>{item.value}</div>
               </div>
             ))}
           </div>
 
-          {/* Pipeline */}
           <SectionTitle>Order Pipeline</SectionTitle>
-          <div className="pipeline-card">
+          <div className="pipeline-card fade-up">
             {[{label:'Pending',value:(data.statusBreakdown||[]).find(s=>s.status==='pending')?.count||0,color:'var(--warning)'},
               {label:'Active', value:(data.statusBreakdown||[]).filter(s=>['accepted','in_progress','pickup_completed','en_route_to_dropoff','arrived_at_dropoff','dropped_at_center'].includes(s.status)).reduce((s,b)=>s+b.count,0), color:'var(--brand)'},
               {label:'Ready',  value:(data.statusBreakdown||[]).find(s=>s.status==='ready_for_delivery')?.count||0, color:'var(--success)'},
@@ -1032,23 +1244,22 @@ const DryCleaningTab = ({ token }) => {
             ))}
           </div>
 
-          {/* Categories */}
           {(data.categoryBreakdown||[]).length > 0 && <>
             <SectionTitle>Top Categories</SectionTitle>
-            <div className="card" style={{padding:'18px 20px', borderRadius:'var(--radius-lg)', marginBottom:14}}>
+            <div className="card fade-up" style={{padding:'16px 18px', borderRadius:'var(--radius-lg)', marginBottom:12}}>
               {(data.categoryBreakdown||[]).slice(0,5).map((item,i) => {
                 const pct = maxCatRevenue > 0 ? (item.totalRevenue/maxCatRevenue)*100 : 0;
                 const col = CAT_COLORS[i % CAT_COLORS.length];
                 return (
-                  <div key={item.category} style={{marginBottom:i<4?14:0}}>
+                  <div key={item.category} style={{marginBottom:i<4?12:0}}>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-                      <span style={{fontWeight:600,fontSize:14}}>{item.category}</span>
+                      <span style={{fontWeight:600,fontSize:13.5}}>{item.category}</span>
                       <span style={{fontWeight:800,color:col}}>{fmtCurrency(item.totalRevenue)}</span>
                     </div>
-                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:col}}/></div>
+                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:col, animationDelay:`${i*0.1}s`}}/></div>
                     <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
-                      <span style={{fontSize:11.5,color:'var(--text-2)'}}>{item.totalOrders} orders</span>
-                      <span style={{fontSize:11.5,color:'var(--text-2)'}}>{item.totalItems} items</span>
+                      <span style={{fontSize:11,color:'var(--text-2)'}}>{item.totalOrders} orders</span>
+                      <span style={{fontSize:11,color:'var(--text-2)'}}>{item.totalItems} items</span>
                     </div>
                   </div>
                 );
@@ -1057,43 +1268,43 @@ const DryCleaningTab = ({ token }) => {
           </>}
 
           <SectionTitle>Your Shops</SectionTitle>
-          {(data.shops||[]).map(shop => <ShopCard key={shop.id} shop={shop}/>)}
+          {(data.shops||[]).map((shop,i) => <ShopCard key={shop.id} shop={shop} index={i}/>)}
         </div></div>
       )}
 
       {view==='orders' && (
-        <div className="main"><div className="tab-content fade-up">
+        <div className="main"><div className="tab-content page-enter">
           <SectionTitle>Recent Orders</SectionTitle>
           <div className="card" style={{borderRadius:'var(--radius-lg)',overflow:'hidden'}}>
             {(data.recentOrders||[]).length===0 ? (
               <div style={{padding:40,textAlign:'center',color:'var(--text-2)'}}>
                 <Icon name="ShoppingBag" size={36} color="#D6D3D1"/>
-                <div style={{marginTop:10}}>No orders yet</div>
+                <div style={{marginTop:10,fontSize:14}}>No orders yet</div>
               </div>
-            ) : (data.recentOrders||[]).map(o => <OrderRow key={o._id} order={o}/>)}
+            ) : (data.recentOrders||[]).map((o,i) => <OrderRow key={o._id} order={o} index={i}/>)}
           </div>
         </div></div>
       )}
 
       {view==='analytics' && (
-        <div className="main"><div className="tab-content fade-up">
+        <div className="main"><div className="tab-content page-enter">
           <SectionTitle>Order Status Breakdown</SectionTitle>
-          <div className="card" style={{padding:'18px 20px',borderRadius:'var(--radius-lg)',marginBottom:14}}>
+          <div className="card fade-up" style={{padding:'16px 18px',borderRadius:'var(--radius-lg)',marginBottom:12}}>
             {(data.statusBreakdown||[]).map((item,i) => {
               const meta = STATUS_META[item.status]||STATUS_META['pending'];
               const total = (data.statusBreakdown||[]).reduce((s,b)=>s+b.count,0);
               const pct = total>0 ? Math.round((item.count/total)*100) : 0;
               return (
-                <div key={item.status} style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                <div key={item.status} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<(data.statusBreakdown.length-1)?12:0}}>
                   <div style={{width:30,height:30,borderRadius:8,background:meta.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <Icon name="Package" size={14} color={meta.color}/>
+                    <Icon name="Package" size={13} color={meta.color}/>
                   </div>
                   <div style={{flex:1}}>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
                       <span style={{fontSize:13,fontWeight:600}}>{meta.label}</span>
                       <span style={{fontWeight:800,color:meta.color}}>{item.count}</span>
                     </div>
-                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:meta.color}}/></div>
+                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:meta.color, animationDelay:`${i*0.08}s`}}/></div>
                   </div>
                 </div>
               );
@@ -1101,21 +1312,21 @@ const DryCleaningTab = ({ token }) => {
           </div>
 
           <SectionTitle>Shop Revenue Comparison</SectionTitle>
-          <div className="card" style={{padding:'18px 20px',borderRadius:'var(--radius-lg)'}}>
+          <div className="card fade-up" style={{padding:'16px 18px',borderRadius:'var(--radius-lg)'}}>
             {[...(data.shops||[])].sort((a,b)=>b.allTimeRevenue-a.allTimeRevenue).map((shop,i) => {
               const maxR = data.shops[0]?.allTimeRevenue||1;
               const pct  = maxR>0 ? (shop.allTimeRevenue/maxR)*100 : 0;
               return (
-                <div key={shop.id} style={{marginBottom:14}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
-                    <div style={{padding:'2px 8px',borderRadius:7,background:i===0?'var(--warning-bg)':'#F7F6F3'}}>
-                      <span style={{fontSize:11,fontWeight:800,color:i===0?'var(--warning)':'var(--text-2)'}}>#{i+1}</span>
+                <div key={shop.id} style={{marginBottom:i<data.shops.length-1?12:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <div style={{padding:'2px 7px',borderRadius:7,background:i===0?'var(--warning-bg)':'#F7F6F3',flexShrink:0}}>
+                      <span style={{fontSize:10.5,fontWeight:800,color:i===0?'var(--warning)':'var(--text-2)'}}>#{i+1}</span>
                     </div>
-                    <span style={{flex:1,fontWeight:600,fontSize:14}}>{shop.shopname}</span>
-                    <span style={{fontFamily:'var(--font-display)',fontWeight:800,color:'var(--brand)'}}>{fmtCurrency(shop.allTimeRevenue)}</span>
+                    <span style={{flex:1,fontWeight:600,fontSize:13.5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{shop.shopname}</span>
+                    <span style={{fontFamily:'var(--font-display)',fontWeight:800,color:'var(--brand)',fontSize:14,flexShrink:0}}>{fmtCurrency(shop.allTimeRevenue)}</span>
                   </div>
-                  <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:'var(--brand)'}}/></div>
-                  <div style={{fontSize:11.5,color:'var(--text-2)',marginTop:3}}>{shop.orderStatus?.paid||0} paid orders · {shop.totalServices} services</div>
+                  <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:'linear-gradient(90deg, var(--brand), var(--brand-2))'}}/></div>
+                  <div style={{fontSize:11,color:'var(--text-2)',marginTop:3}}>{shop.orderStatus?.paid||0} paid orders · {shop.totalServices} services</div>
                 </div>
               );
             })}
@@ -1146,22 +1357,14 @@ const App = () => {
   const [refreshKey,setRefreshKey]= useState(0);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      // No token → show error immediately, don't even fetch
-      if (!AUTH_TOKEN) {
-        setError('NO_TOKEN');
-        return;
-      }
+      if (!AUTH_TOKEN) { setError('NO_TOKEN'); return; }
       const res = await api('/merchants/stats');
-      if (!res) {
-        setError('API returned empty data. Check your token and that the backend is running.');
-        return;
-      }
+      if (!res) { setError('API returned empty data.'); return; }
       const norm = {
-        totalEarnings:  res.totalEarnings  || { daily:0, weekly:0, monthly:0 },
-        totalBookings:  res.totalBookings  || { daily:0, weekly:0, monthly:0 },
+        totalEarnings: res.totalEarnings  || { daily:0, weekly:0, monthly:0 },
+        totalBookings: res.totalBookings  || { daily:0, weekly:0, monthly:0 },
         venues: (res.venues||[]).map(v => ({
           ...v,
           slots: v.slots || { total:0, booked:0, available:0 },
@@ -1178,18 +1381,12 @@ const App = () => {
         }))
       };
       setData(norm);
-    } catch(e) {
-      console.error('Dashboard fetch error:', e);
-      setError(e.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
+    } catch(e) { setError(e.message || 'Failed to load dashboard'); }
+    finally { setLoading(false); }
   }, [refreshKey]);
 
-  // ✅ CRITICAL — triggers on mount and every refresh
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Render states ─────────────────────────────────────────
   if (loading) return (
     <div className="app">
       <div className="topbar">
@@ -1198,8 +1395,8 @@ const App = () => {
         <div className="topbar-merchant">Merchant Dashboard</div>
       </div>
       <div className="center-state" style={{flex:1}}>
-        <Spinner size={44}/>
-        <span style={{color:'var(--text-2)', fontSize:14, marginTop:8}}>Loading dashboard…</span>
+        <Spinner size={48}/>
+        <span style={{color:'var(--text-2)', fontSize:14, marginTop:8, fontWeight:600}}>Loading dashboard…</span>
         <span style={{color:'#C4BDB8', fontSize:11, marginTop:4}}>Connecting to {API_BASE_URL}</span>
       </div>
     </div>
@@ -1209,17 +1406,13 @@ const App = () => {
     <div className="app">
       <div className="topbar"><div className="topbar-logo">Vervoer</div></div>
       <div className="center-state" style={{flex:1}}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
-          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <div style={{fontWeight:700,fontSize:18}}>No auth token</div>
-        <div style={{color:'var(--text-2)',fontSize:13,maxWidth:320,textAlign:'center',lineHeight:1.7}}>
-          Open this page from the <strong>Vervoer merchant app</strong>.<br/>
-          The URL needs <code style={{background:'#F7F6F3',padding:'2px 7px',borderRadius:5}}>?token=YOUR_JWT</code>
+        <div style={{width:64,height:64,borderRadius:20,background:'var(--warning-bg)',display:'flex',alignItems:'center',justifyContent:'center',animation:'floatY 2s ease-in-out infinite'}}>
+          <Icon name="AlertTriangle" size={32} color="var(--warning)"/>
         </div>
-        <div style={{background:'#F7F6F3',borderRadius:10,padding:'10px 16px',fontSize:11,color:'var(--text-2)',maxWidth:360,wordBreak:'break-all',textAlign:'center'}}>
-          {window.location.href}
+        <div style={{fontWeight:700,fontSize:18}}>No auth token</div>
+        <div style={{color:'var(--text-2)',fontSize:13,maxWidth:300,textAlign:'center',lineHeight:1.7}}>
+          Open this from the <strong>Vervoer merchant app</strong>.<br/>
+          URL needs <code style={{background:'#F7F6F3',padding:'2px 7px',borderRadius:5}}>?token=JWT</code>
         </div>
       </div>
     </div>
@@ -1233,48 +1426,48 @@ const App = () => {
         <div className="topbar-merchant">Merchant Dashboard</div>
       </div>
       <div className="center-state" style={{flex:1}}>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
+        <div style={{width:64,height:64,borderRadius:20,background:'var(--error-bg)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <Icon name="AlertCircle" size={32} color="var(--error)"/>
+        </div>
         <div style={{fontWeight:700,fontSize:18}}>Could not load dashboard</div>
-        <div style={{color:'var(--text-2)',fontSize:12,maxWidth:360,textAlign:'center',lineHeight:1.6,fontFamily:'monospace',background:'#FFF1F1',padding:'10px 14px',borderRadius:10,wordBreak:'break-all'}}>
+        <div style={{color:'var(--text-2)',fontSize:12,maxWidth:340,textAlign:'center',lineHeight:1.6,fontFamily:'monospace',background:'#FFF1F1',padding:'10px 14px',borderRadius:10,wordBreak:'break-all'}}>
           {error}
         </div>
         <button className="btn-primary" onClick={() => setRefreshKey(k=>k+1)}>
           <Icon name="RefreshCw" size={15}/> Retry
         </button>
-        <div style={{fontSize:11,color:'var(--text-2)',marginTop:4,textAlign:'center'}}>
-          Backend: <code style={{fontSize:11}}>{API_BASE_URL}</code>
-        </div>
       </div>
     </div>
   );
 
   return (
     <div className="app">
+      {/* Topbar */}
       <div className="topbar">
         <div className="topbar-logo">Vervoer</div>
         <div className="topbar-sep"/>
         <div className="topbar-merchant">
-          {MERCHANT_ID ? `ID: ${MERCHANT_ID}` : 'Merchant Dashboard'}
+          {MERCHANT_ID ? `ID: ${MERCHANT_ID.slice(-6)}` : 'Dashboard'}
         </div>
         <div className="topbar-right">
           <button className="btn-download" onClick={() => setRefreshKey(k=>k+1)}>
-            <Icon name="RefreshCw" size={14}/> Refresh
+            <Icon name="RefreshCw" size={13}/> <span style={{display:'none'}}>Refresh</span>
           </button>
         </div>
       </div>
 
+      {/* Desktop tab strip */}
       <div className="tab-strip">
         {TABS.map(tab => (
           <button key={tab.key} className={`tab-btn ${activeTab===tab.key?'active':''}`}
             onClick={() => setActiveTab(tab.key)}>
-            <Icon name={tab.icon} size={15}/>
+            <Icon name={tab.icon} size={14}/>
             {tab.label}
           </button>
         ))}
       </div>
 
+      {/* Content */}
       <div className="main" key={activeTab}>
         {activeTab==='overview'    && <OverviewTab   data={data} period={period} onPeriodChange={setPeriod}/>}
         {activeTab==='slots'       && <SlotsTab      data={data}/>}
@@ -1282,6 +1475,21 @@ const App = () => {
         {activeTab==='monthly'     && <MonthlyTab    data={data}/>}
         {activeTab==='dryCleaning' && <DryCleaningTab token={AUTH_TOKEN}/>}
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav className="mobile-nav">
+        <div className="mobile-nav-inner">
+          {TABS.map((tab, i) => (
+            <button key={tab.key} className={`mobile-nav-btn ${activeTab===tab.key?'active':''}`}
+              onClick={() => setActiveTab(tab.key)}>
+              <div className="mobile-nav-icon">
+                <Icon name={tab.icon} size={20} color={activeTab===tab.key ? 'var(--brand)' : 'var(--text-2)'}/>
+              </div>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
@@ -1295,11 +1503,10 @@ class ErrorBoundary extends React.Component {
       <div style={{fontFamily:'monospace',padding:24,maxWidth:600,margin:'40px auto'}}>
         <div style={{color:'#EF4444',fontSize:18,fontWeight:700,marginBottom:12}}>⚠️ Render Error</div>
         <div style={{background:'#FFF1F1',border:'1px solid #FCA5A5',borderRadius:8,padding:16,fontSize:13,wordBreak:'break-all',lineHeight:1.7}}>
-          <b>{String(this.state.error.message)}</b><br/><br/>
-          <pre style={{fontSize:11,overflow:'auto'}}>{this.state.error.stack}</pre>
+          <b>{String(this.state.error.message)}</b>
         </div>
-        <button onClick={() => this.setState({error:null})} 
-          style={{marginTop:16,background:'#FF6B35',color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,cursor:'pointer',fontSize:14,fontWeight:600}}>
+        <button onClick={() => this.setState({error:null})}
+          style={{marginTop:16,background:'#FF9401',color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,cursor:'pointer',fontSize:14,fontWeight:600}}>
           Retry
         </button>
       </div>
