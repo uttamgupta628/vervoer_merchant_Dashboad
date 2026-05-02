@@ -826,46 +826,14 @@ const DryCleaningTab = ({ token }) => {
   const [period, setPeriod] = useState('weekly');
 
   const fetchData = useCallback(async () => {
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    try {
+      const res = await api('/merchants/dry-cleaner-stats');
+      setData(res);
+    } catch(e) { console.error(e); }
+    finally { setLoading(false); }
+  }, []);
 
-  try {
-    const res = await api('/merchants/stats');
-
-    if (!res) {
-      setError("Failed to load dashboard");
-      setLoading(false);
-      return;
-    }
-
-    const safe = res || {};
-
-    const norm = {
-      ...safe,
-      venues: (safe.venues || []).map(v => ({
-        ...v,
-        recentBookings: (v.recentBookings || []).map(b => ({
-          ...b,
-          from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-          to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
-        }))
-      })),
-      recentBookings: (safe.recentBookings || []).map(b => ({
-        ...b,
-        from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-        to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
-      }))
-    };
-
-    setData(norm);   // ✅ THIS WAS MISSING
-
-  } catch (e) {
-    console.error(e);
-    setError("Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-}, []);
   useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading) return <div className="center-state"><Spinner/><span style={{color:'var(--text-2)'}}>Loading laundry stats…</span></div>;
@@ -1108,37 +1076,45 @@ const App = () => {
   const [refreshKey,setRefreshKey]= useState(0);
 
   const fetchData = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const res = await api('/merchants/stats');
+  setLoading(true);
+  setError(null);
 
-if (!res) {
-  setError("Failed to load dashboard");
-  setLoading(false);
-  return;
-}
-      // Normalize dates
-      const safe = res || {};
+  try {
+    const res = await api('/merchants/stats');
 
-const norm = {
-  ...safe,
-  venues: (safe.venues || []).map(v => ({
-    ...v,
-    recentBookings: (v.recentBookings || []).map(b => ({
-      ...b,
-      from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-      to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
-    }))
-  })),
-  recentBookings: (safe.recentBookings || []).map(b => ({
-    ...b,
-    from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
-    to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
-  }))
-};
+    if (!res) {
+      setError("Failed to load dashboard");
+      return;
+    }
 
-  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
+    const safe = res || {};
 
+    const norm = {
+      ...safe,
+      venues: (safe.venues || []).map(v => ({
+        ...v,
+        recentBookings: (v.recentBookings || []).map(b => ({
+          ...b,
+          from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
+          to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
+        }))
+      })),
+      recentBookings: (safe.recentBookings || []).map(b => ({
+        ...b,
+        from: typeof b.from === 'string' ? b.from : new Date(b.from).toISOString(),
+        to: typeof b.to === 'string' ? b.to : new Date(b.to).toISOString(),
+      }))
+    };
+
+    setData(norm); // ✅ MUST
+
+  } catch (e) {
+    console.error(e);
+    setError("Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+}, []);
   // Show helpful message if no token in URL
   if (!AUTH_TOKEN && !loading) return (
     <div className="app">
