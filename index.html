@@ -337,12 +337,12 @@ const api = async (path) => {
     const url = `${API_BASE_URL}${path}`;
 
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-      }
-    });
-
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${AUTH_TOKEN}`,
+    "Content-Type": "application/json",
+  },
+});
     if (!res.ok) {
       const text = await res.text();
       console.error("API ERROR:", text);
