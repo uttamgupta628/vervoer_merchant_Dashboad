@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merchant Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    /* ── Reset & Root ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand:       #FF6B35;
+      --brand-light: #FFF3EE;
+      --brand-dark:  #E85520;
+      --bg:          #F7F6F3;
+      --card:        #FFFFFF;
+      --text:        #1C1917;
+      --text-2:      #78716C;
+      --border:      #E8E5E1;
+      --success:     #22C55E;
+      --success-bg:  #F0FDF4;
+      --warning:     #F59E0B;
+      --warning-bg:  #FFFBEB;
+      --error:       #EF4444;
+      --error-bg:    #FFF1F1;
+      --blue:        #3B82F6;
+      --blue-bg:     #EFF6FF;
+      --purple:      #8B5CF6;
+      --purple-bg:   #F5F3FF;
+      --teal:        #14B8A6;
+      --teal-bg:     #F0FDFA;
+      --parking:     #3B82F6;
+      --parking-bg:  #EFF6FF;
+      --garage:      #8B5CF6;
+      --garage-bg:   #F5F3FF;
+      --residence:   #10B981;
+      --residence-bg:#ECFDF5;
+      --radius:      16px;
+      --radius-lg:   24px;
+      --shadow:      0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.08);
+      --shadow-md:   0 4px 16px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.06);
+      --font-display: 'Syne', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+    }
+    html, body, #root { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 99px; }
+    button { cursor: pointer; font-family: var(--font-body); border: none; background: none; }
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+    .fade-up { animation: fadeUp 0.45s ease both; }
+    .fade-up-1 { animation-delay: 0.05s; }
+    .fade-up-2 { animation-delay: 0.10s; }
+    .fade-up-3 { animation-delay: 0.15s; }
+    .fade-up-4 { animation-delay: 0.20s; }
+    .fade-up-5 { animation-delay: 0.25s; }
+
+    /* ── Layout ── */
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .topbar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 28px; height: 64px; min-height: 64px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      z-index: 10;
+    }
+    .topbar-logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--brand); letter-spacing: -0.5px; }
+    .topbar-sep { width: 1px; height: 24px; background: var(--border); }
+    .topbar-merchant { font-size: 14px; font-weight: 600; color: var(--text-2); }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .btn-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--brand-light); color: var(--brand);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-icon:hover { background: #FFE4D6; transform: scale(1.06); }
+    .btn-primary {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 10px;
+      background: var(--brand); color: #fff;
+      font-weight: 600; font-size: 13.5px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(255,107,53,0.25);
+    }
+    .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,107,53,0.35); }
+
+    /* ── Tabs ── */
+    .tab-strip {
+      display: flex; align-items: center; gap: 2px;
+      padding: 0 28px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tab-strip::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 14px 18px; border-bottom: 2.5px solid transparent;
+      font-size: 13.5px; font-weight: 600; color: var(--text-2);
+      transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+    /* ── Content ── */
+    .main { flex: 1; overflow-y: auto; }
+    .tab-content { padding: 28px; max-width: 1280px; margin: 0 auto; }
+
+    /* ── Period Toggle ── */
+    .period-toggle {
+      display: inline-flex; background: #EDECEA; border-radius: 10px; padding: 3px; gap: 2px;
+    }
+    .period-btn {
+      padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-2);
+      transition: all 0.2s;
+    }
+    .period-btn.active {
+      background: var(--card); color: var(--brand);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border-radius: var(--radius-lg);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .stat-card {
+      background: var(--card); border-radius: var(--radius-lg);
+      border: 1px solid var(--border); border-left: 4px solid;
+      padding: 22px 24px; box-shadow: var(--shadow);
+    }
+    .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-2); margin-bottom: 6px; }
+    .stat-value { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+    .stat-sub   { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+    /* ── Section Title ── */
+    .section-title {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-2); margin: 24px 0 14px;
+    }
+
+    /* ── Venue Card ── */
+    .venue-card { padding: 20px 22px; margin-bottom: 14px; }
+    .venue-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .icon-wrap {
+      width: 46px; height: 46px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .venue-name { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text); }
+    .venue-addr { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+    .earning-pill { padding: 6px 14px; border-radius: 99px; font-weight: 800; font-size: 15px; margin-left: auto; }
+    .progress-track { height: 8px; background: #EDECEA; border-radius: 99px; overflow: hidden; margin: 10px 0; }
+    .progress-fill  { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+    .slot-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .slot-num { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+    .slot-lbl { font-size: 11.5px; color: var(--text-2); font-weight: 500; margin-top: 1px; }
+
+    /* ── Booking Row ── */
+    .booking-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: var(--card); transition: background 0.15s;
+    }
+    .booking-row:last-child { border-bottom: none; }
+    .booking-row:hover { background: #FAFAF9; }
+    .booking-name { font-weight: 700; font-size: 14.5px; color: var(--text); }
+    .booking-slot { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+    .booking-amt  { font-family: var(--font-display); font-weight: 800; font-size: 15px; }
+    .status-pill  { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+    .badge-monthly { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:8px; background:var(--brand-light); color:var(--brand); font-size:11px; font-weight:800; }
+    .active-dot { width:7px; height:7px; border-radius:50%; background:var(--success); }
+
+    /* ── Filter chips ── */
+    .filter-row { display: flex; gap: 8px; padding: 16px 0; flex-wrap: wrap; }
+    .filter-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 15px; border-radius: 99px; border: 1.5px solid;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+    /* ── Type strip ── */
+    .type-strip {
+      display: flex; background: var(--card); border-radius: var(--radius-lg);
+      border: 1px solid var(--border); padding: 20px 24px; gap: 0; margin: 16px 0;
+    }
+    .type-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .type-item + .type-item { border-left: 1px solid var(--border); }
+    .type-icon-wrap { width: 42px; height: 42px; border-radius: 13px; display:flex; align-items:center; justify-content:center; }
+    .type-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+    .type-lbl   { font-size: 12px; color: var(--text-2); font-weight: 500; }
+
+    /* ── MRR Banner ── */
+    .mrr-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--brand-light); border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,107,53,0.2); padding: 20px 24px; margin-top: 8px;
+      box-shadow: 0 2px 12px rgba(255,107,53,0.08);
+    }
+    .mrr-value { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--brand); letter-spacing: -1px; }
+
+    /* ── Slot visual ── */
+    .slot-grid { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0; }
+    .slot-box  { width: 22px; height: 22px; border-radius: 6px; border: 1px solid; display:flex; align-items:center; justify-content:center; }
+    .slot-dot  { width: 9px; height: 9px; border-radius: 50%; }
+    .legend-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); font-weight: 500; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+    /* ── Monthly cards ── */
+    .m-card { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--card); overflow: hidden; margin-bottom: 14px; box-shadow: var(--shadow); }
+    .m-card-header { display:flex; align-items:center; gap:14px; padding:18px 20px; }
+    .m-card-body   { padding: 0 20px 18px; }
+    .m-stats-row   { display:flex; background:#F7F6F3; border-radius:12px; padding:12px 16px; }
+    .m-stat-item   { flex:1; text-align:center; }
+    .m-stat-num    { font-family:var(--font-display); font-size:18px; font-weight:800; }
+    .m-stat-lbl    { font-size:11px; color:var(--text-2); margin-top:2px; }
+    .m-stat-divider{ width:1px; background:var(--border); margin:2px 0; }
+    .enabled-pill  { padding:3px 12px; border-radius:99px; font-size:11.5px; font-weight:800; margin-left:auto; }
+
+    /* ── Dry Cleaning ── */
+    .dry-inner-tabs { display:flex; align-items:center; gap:4px; padding:12px 28px; background:var(--card); border-bottom:1px solid var(--border); }
+    .dry-inner-btn  { padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600; color:var(--text-2); transition:all 0.2s; }
+    .dry-inner-btn.active { background:var(--brand-light); color:var(--brand); }
+    .shop-card { background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); margin-bottom:14px; overflow:hidden; box-shadow:var(--shadow); }
+    .shop-header { display:flex; align-items:center; gap:12px; padding:18px 20px; cursor:pointer; transition:background 0.15s; }
+    .shop-header:hover { background:#FAFAF9; }
+    .shop-status-strip { display:flex; background:#F7F6F3; padding:12px 20px; }
+    .shop-status-item  { flex:1; text-align:center; }
+    .shop-status-num   { font-family:var(--font-display); font-size:18px; font-weight:800; }
+    .shop-status-lbl   { font-size:11px; color:var(--text-2); }
+    .order-row { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--card); }
+    .order-row:last-child { border-bottom:none; }
+    .order-icon-wrap { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .cat-bar-bg   { height:7px; background:#EDECEA; border-radius:4px; overflow:hidden; margin:5px 0; }
+    .cat-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
+    .pipeline-card  { display:flex; background:var(--card); border-radius:var(--radius-lg); border:1px solid var(--border); padding:20px; margin-bottom:14px; box-shadow:var(--shadow); }
+    .pipeline-item  { flex:1; text-align:center; }
+    .pipeline-num   { font-family:var(--font-display); font-size:28px; font-weight:900; }
+    .pipeline-lbl   { font-size:12px; color:var(--text-2); margin-top:3px; }
+    .pipeline-div   { width:1px; background:var(--border); margin:4px 0; }
+
+    /* ── Loading / Error states ── */
+    .center-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:14px; padding:40px; }
+    .spin { animation: spin 0.9s linear infinite; }
+    .skeleton {
+      background: linear-gradient(90deg, #EDECEA 25%, #F7F6F3 50%, #EDECEA 75%);
+      background-size: 800px 100%; animation: shimmer 1.4s infinite; border-radius: 8px;
+    }
+
+    /* ── SVG Download btn ── */
+    .btn-download {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 15px; border-radius:10px;
+      background:var(--card); border:1.5px solid var(--border);
+      font-size:13px; font-weight:600; color:var(--text-2);
+      transition:all 0.2s;
+    }
+    .btn-download:hover { border-color:var(--brand); color:var(--brand); background:var(--brand-light); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .tab-content { padding: 16px; }
+      .topbar { padding: 0 16px; }
+      .tab-strip { padding: 0 16px; }
+    }
+    @media (max-width: 600px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .type-strip { flex-direction: column; gap: 12px; }
+      .type-item + .type-item { border-left: none; border-top: 1px solid var(--border); padding-top: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const API_BASE_URL = 'https://vervoer-backend2.onrender.com/api';
+
+// Parse URL params: ?token=JWT&merchantId=xxx
+// From your RN app call:
+//   WebBrowser.openBrowserAsync(`https://your-vercel-app.vercel.app?token=${token}&merchantId=${user._id}`)
+const urlParams   = new URLSearchParams(window.location.search);
+const AUTH_TOKEN  = urlParams.get('token') || '';
+const MERCHANT_ID = urlParams.get('merchantId') || '';
+
+// All merchant routes live under /merchants/...
+// e.g. GET /api/merchants/stats
+const api = async (path) => {
+  const url = `${API_BASE_URL}/merchants${path}`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${AUTH_TOKEN}`,
+      'Content-Type': 'application/json',
+    }
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${res.statusText}${body ? ': ' + body.slice(0,120) : ''}`);
+  }
+  const json = await res.json();
+  return json?.data ?? json;
+};
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const fmtCurrency = (n = 0) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Number(n).toFixed(0)}`;
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '—';
+const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }) : '';
+const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const statusColor = (s) => s==='SUCCESS'||s==='completed' ? 'var(--success)' : s==='PENDING'||s==='pending' ? 'var(--warning)' : 'var(--error)';
+const statusBg    = (s) => s==='SUCCESS'||s==='completed' ? 'var(--success-bg)' : s==='PENDING'||s==='pending' ? 'var(--warning-bg)' : 'var(--error-bg)';
+
+const VENUE_COLOR = { parking:'var(--parking)', garage:'var(--purple)', residence:'var(--residence)' };
+const VENUE_BG    = { parking:'var(--parking-bg)', garage:'var(--purple-bg)', residence:'var(--residence-bg)' };
+const PERIOD_LABEL = { daily:'Today', weekly:'This Week', monthly:'This Month' };
+const CAT_COLORS  = ['var(--brand)','var(--purple)','var(--teal)','var(--success)','var(--warning)','#EC4899','#06B6D4','#84CC16'];
+
+const STATUS_META = {
+  pending:             { label:'Pending',       color:'var(--warning)', bg:'var(--warning-bg)' },
+  accepted:            { label:'Accepted',      color:'var(--brand)',   bg:'var(--brand-light)' },
+  in_progress:         { label:'In Progress',   color:'var(--purple)',  bg:'var(--purple-bg)' },
+  pickup_completed:    { label:'Picked Up',     color:'var(--teal)',    bg:'var(--teal-bg)' },
+  en_route_to_dropoff: { label:'En Route',      color:'var(--purple)',  bg:'var(--purple-bg)' },
+  arrived_at_dropoff:  { label:'Arrived',       color:'var(--teal)',    bg:'var(--teal-bg)' },
+  dropped_at_center:   { label:'At Cleaners',   color:'var(--brand)',   bg:'var(--brand-light)' },
+  ready_for_delivery:  { label:'Ready',         color:'var(--success)', bg:'var(--success-bg)' },
+  completed:           { label:'Completed',     color:'var(--success)', bg:'var(--success-bg)' },
+  cancelled:           { label:'Cancelled',     color:'var(--error)',   bg:'var(--error-bg)' },
+  rejected:            { label:'Rejected',      color:'var(--error)',   bg:'var(--error-bg)' },
+};
+
+// ══════════════════════════════════════════════════════════
+// SVG DOWNLOAD UTILITY
+// ══════════════════════════════════════════════════════════
+const downloadSVG = (svgId, filename) => {
+  const el = document.getElementById(svgId);
+  if (!el) return;
+  const svgData = new XMLSerializer().serializeToString(el);
+  const blob = new Blob([svgData], { type:'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename || 'chart.svg';
+  a.click(); URL.revokeObjectURL(url);
+};
+
+// Generate SVG for earnings chart
+const buildEarningsSVG = (venues, period) => {
+  if (!venues?.length) return null;
+  const W = 600, H = 240, PL = 60, PR = 20, PT = 20, PB = 40;
+  const vals = venues.map(v => v.earnings[period]);
+  const max  = Math.max(...vals, 1);
+  const barW = Math.floor((W - PL - PR) / venues.length * 0.6);
+  const gap  = (W - PL - PR) / venues.length;
+  const COLORS = ['var(--brand)','var(--blue)','var(--purple)','var(--teal)','var(--success)'];
+
+  const bars = venues.map((v, i) => {
+    const x = PL + i * gap + (gap - barW) / 2;
+    const bh = ((vals[i] / max) * (H - PT - PB));
+    const y  = PT + (H - PT - PB) - bh;
+    const col = COLORS[i % COLORS.length];
+    const label = v.name.length > 10 ? v.name.slice(0,10)+'…' : v.name;
+    return `
+      <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="6" fill="${col}" opacity="0.85"/>
+      <text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${fmtCurrency(vals[i])}</text>
+      <text x="${x + barW/2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#78716C">${label}</text>
+    `;
+  }).join('');
+
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => {
+    const val = max * t;
+    const y   = PT + (H - PT - PB) * (1 - t);
+    return `
+      <line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="#EDECEA" stroke-width="1"/>
+      <text x="${PL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#78716C">${fmtCurrency(val)}</text>
+    `;
+  }).join('');
+
+  return (
+    <svg id="svg-earnings" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
+      xmlns="http://www.w3.org/2000/svg" style={{ fontFamily:'DM Sans,sans-serif', width:'100%', height:'auto' }}>
+      {ticks.split('\n').filter(Boolean).map((t,i) => <g key={i} dangerouslySetInnerHTML={{__html:t}}/>)}
+      {bars.split('\n').filter(Boolean).map((b,i) => <g key={i} dangerouslySetInnerHTML={{__html:b}}/>)}
+    </svg>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// SHARED COMPONENTS
+// ══════════════════════════════════════════════════════════
+const { useState, useEffect, useCallback, useRef } = React;
+
+const Icon = ({ name, size=18, color='currentColor', ...rest }) => {
+  const el = lucide[name] || lucide['HelpCircle'];
+  return React.createElement(el, { size, color, strokeWidth:2, ...rest });
+};
+
+const PeriodToggle = ({ period, onChange }) => (
+  <div className="period-toggle">
+    {['daily','weekly','monthly'].map(p => (
+      <button key={p} className={`period-btn ${period===p?'active':''}`} onClick={() => onChange(p)}>
+        {p.charAt(0).toUpperCase()+p.slice(1)}
+      </button>
+    ))}
+  </div>
+);
+
+const VenueIcon = ({ type, size=18, color }) => {
+  const name = type==='parking' ? 'Car' : type==='garage' ? 'Warehouse' : 'Home';
+  return <Icon name={name} size={size} color={color} />;
+};
+
+const SectionTitle = ({ children }) => <div className="section-title">{children}</div>;
+
+const Spinner = ({ size=32 }) => (
+  <svg className="spin" width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="#EDECEA" strokeWidth="3"/>
+    <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--brand)" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+
+// ══════════════════════════════════════════════════════════
+// OVERVIEW TAB
+// ══════════════════════════════════════════════════════════
+const OverviewTab = ({ data, period, onPeriodChange }) => {
+  const totalMRR = (data.venues||[]).filter(v=>v.monthlyChargeEnabled)
+    .reduce((s,v)=>s+v.monthlyRate*v.activeMonthlySubscriptions, 0);
+
+  const svgEl = buildEarningsSVG(data.venues, period);
+
+  return (
+    <div className="tab-content fade-up">
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:10}}>
+        <PeriodToggle period={period} onChange={onPeriodChange}/>
+        <button className="btn-download" onClick={() => downloadSVG('svg-earnings', `earnings-${period}.svg`)}>
+          <Icon name="Download" size={14}/> Export Chart SVG
+        </button>
+      </div>
+
+      {/* Hero stats */}
+      <div className="grid-2 fade-up fade-up-1" style={{marginBottom:16}}>
+        <div className="stat-card fade-up" style={{borderLeftColor:'var(--brand)'}}>
+          <div className="stat-label">Total Revenue</div>
+          <div className="stat-value" style={{color:'var(--brand)'}}>{fmtCurrency(data.totalEarnings?.[period]||0)}</div>
+          <div className="stat-sub">{PERIOD_LABEL[period]}</div>
+        </div>
+        <div className="stat-card fade-up fade-up-1" style={{borderLeftColor:'var(--blue)'}}>
+          <div className="stat-label">Total Bookings</div>
+          <div className="stat-value" style={{color:'var(--blue)'}}>{data.totalBookings?.[period]||0}</div>
+          <div className="stat-sub">{PERIOD_LABEL[period]}</div>
+        </div>
+      </div>
+
+      {/* Type strip */}
+      <div className="type-strip fade-up fade-up-2">
+        {['parking','garage','residence'].map(type => {
+          const total = (data.venues||[]).filter(v=>v.type===type).reduce((s,v)=>s+v.earnings[period],0);
+          return (
+            <div key={type} className="type-item">
+              <div className="type-icon-wrap" style={{background:VENUE_BG[type]}}>
+                <VenueIcon type={type} size={17} color={VENUE_COLOR[type]}/>
+              </div>
+              <div className="type-value" style={{color:VENUE_COLOR[type]}}>{fmtCurrency(total)}</div>
+              <div className="type-lbl">{type.charAt(0).toUpperCase()+type.slice(1)}s</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Earnings chart */}
+      {svgEl && (
+        <div className="card fade-up fade-up-3" style={{padding:'20px 22px', marginBottom:14}}>
+          <div style={{fontSize:13,fontWeight:700,color:'var(--text-2)',marginBottom:12}}>Revenue by Venue — {PERIOD_LABEL[period]}</div>
+          {svgEl}
+        </div>
+      )}
+
+      <SectionTitle>Your Venues</SectionTitle>
+      {(data.venues||[]).map((v,i) => <VenueCard key={v.id||i} venue={v} period={period}/>)}
+
+      {/* MRR Banner */}
+      <div className="mrr-banner fade-up">
+        <div style={{display:'flex', alignItems:'center', gap:14}}>
+          <div className="icon-wrap" style={{background:'var(--brand-light)'}}>
+            <Icon name="Repeat" size={20} color="var(--brand)"/>
+          </div>
+          <div>
+            <div style={{fontWeight:700, fontSize:14.5, color:'var(--text)'}}>Monthly Recurring Revenue</div>
+            <div style={{fontSize:12.5, color:'var(--text-2)', marginTop:2}}>All venues with monthly plans</div>
+          </div>
+        </div>
+        <div className="mrr-value">${totalMRR.toLocaleString()}</div>
+      </div>
+    </div>
+  );
+};
+
+const VenueCard = ({ venue, period }) => {
+  const vc  = VENUE_COLOR[venue.type];
+  const vbg = VENUE_BG[venue.type];
+  const pct = venue.slots?.total > 0 ? Math.round((venue.slots.booked/venue.slots.total)*100) : 0;
+
+  return (
+    <div className="card venue-card fade-up" style={{marginBottom:14}}>
+      <div className="venue-header">
+        <div className="icon-wrap" style={{background:vbg}}>
+          <VenueIcon type={venue.type} size={20} color={vc}/>
+        </div>
+        <div style={{flex:1}}>
+          <div className="venue-name">{venue.name}</div>
+          <div className="venue-addr">{venue.address}</div>
+        </div>
+        <div className="earning-pill" style={{background:vbg, color:vc}}>
+          {fmtCurrency(venue.earnings?.[period]||0)}
+        </div>
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
+        <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:0.6,color:'var(--text-2)'}}>Occupancy</span>
+        <span style={{fontWeight:800, color:vc, fontSize:14}}>{pct}%</span>
+      </div>
+      <div className="progress-track"><div className="progress-fill" style={{width:`${pct}%`, background:vc}}/></div>
+      <div className="slot-row">
+        {[{label:'Booked', value:venue.slots?.booked||0, color:vc},
+          {label:'Free',   value:venue.slots?.available||0, color:'var(--success)'},
+          {label:'Total',  value:venue.slots?.total||0, color:'var(--text-2)'}].map(item=>(
+          <div key={item.label} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <div className="slot-num" style={{color:item.color}}>{item.value}</div>
+            <div className="slot-lbl">{item.label}</div>
+          </div>
+        ))}
+        {venue.monthlyChargeEnabled && (
+          <div className="badge-monthly" style={{marginLeft:'auto'}}>
+            <Icon name="Repeat" size={10} color="var(--brand)"/>
+            {venue.activeMonthlySubscriptions} monthly
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// SLOTS TAB
+// ══════════════════════════════════════════════════════════
+const SlotsTab = ({ data }) => (
+  <div className="tab-content fade-up">
+    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4}}>
+      <SectionTitle>Slot Availability</SectionTitle>
+      <button className="btn-download" onClick={() => downloadSVG('svg-slots', 'slots.svg')}>
+        <Icon name="Download" size={14}/> Export SVG
+      </button>
+    </div>
+    <svg id="svg-slots" style={{display:'none'}}/>
+    {(data.venues||[]).map((venue,i) => {
+      const vc  = VENUE_COLOR[venue.type];
+      const vbg = VENUE_BG[venue.type];
+      const { booked=0, available=0, total=0 } = venue.slots||{};
+      const pct = total > 0 ? Math.round((booked/total)*100) : 0;
+      return (
+        <div key={venue.id||i} className="card fade-up" style={{padding:'20px 22px', marginBottom:14}}>
+          <div className="venue-header">
+            <div className="icon-wrap" style={{background:vbg}}>
+              <VenueIcon type={venue.type} size={20} color={vc}/>
+            </div>
+            <div style={{flex:1}}>
+              <div className="venue-name">{venue.name}</div>
+              <div className="venue-addr">{venue.address}</div>
+            </div>
+            <div style={{background:vbg, color:vc, padding:'4px 12px', borderRadius:99, fontWeight:800, fontSize:13}}>{pct}%</div>
+          </div>
+          <div className="progress-track"><div className="progress-fill" style={{width:`${pct}%`, background:vc}}/></div>
+          <div className="slot-grid">
+            {Array.from({length:total}).map((_,si) => {
+              const isMonthly = venue.monthlyChargeEnabled && si < venue.activeMonthlySubscriptions;
+              const isBooked  = si < booked;
+              return (
+                <div key={si} className="slot-box" style={{
+                  background: isMonthly ? 'var(--brand-light)' : isBooked ? vbg : 'var(--success-bg)',
+                  borderColor: isMonthly ? 'var(--brand)' : isBooked ? vc : 'var(--success)',
+                }}>
+                  <div className="slot-dot" style={{background: isMonthly ? 'var(--brand)' : isBooked ? vc : 'var(--success)'}}/>
+                </div>
+              );
+            })}
+          </div>
+          <div className="legend-row">
+            {[{color:'var(--success)', label:`${available} Free`},
+              {color:vc, label:`${booked - (venue.activeMonthlySubscriptions||0)} Hourly`},
+              ...(venue.monthlyChargeEnabled ? [{color:'var(--brand)', label:`${venue.activeMonthlySubscriptions} Monthly`}] : [])
+            ].map(item => (
+              <div key={item.label} className="legend-item">
+                <div className="legend-dot" style={{background:item.color}}/>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+// ══════════════════════════════════════════════════════════
+// BOOKINGS TAB
+// ══════════════════════════════════════════════════════════
+const BookingRow = ({ booking }) => {
+  const vc  = VENUE_COLOR[booking.type];
+  const vbg = VENUE_BG[booking.type];
+  const now = Date.now();
+  const isActive = new Date(booking.from).getTime()<=now && new Date(booking.to).getTime()>=now;
+
+  return (
+    <div className="booking-row">
+      <div className="icon-wrap" style={{background:vbg, width:40, height:40, borderRadius:12}}>
+        <VenueIcon type={booking.type} size={16} color={vc}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap'}}>
+          <span className="booking-name">{booking.customerName}</span>
+          {booking.isMonthly && <span className="badge-monthly"><Icon name="Repeat" size={9} color="var(--brand)"/> Monthly</span>}
+          {isActive && <span className="active-dot" title="Active"/>}
+        </div>
+        <div className="booking-slot">Slot {booking.slot} · {fmtDate(booking.from)} {fmtTime(booking.from)}</div>
+      </div>
+      <div style={{textAlign:'right', display:'flex', flexDirection:'column', gap:5}}>
+        <div className="booking-amt">${Number(booking.amount).toFixed(2)}</div>
+        <div className="status-pill" style={{background:statusBg(booking.status), color:statusColor(booking.status)}}>
+          {booking.status}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BookingsTab = ({ data }) => {
+  const [filter, setFilter] = useState('all');
+  const filtered = filter==='all' ? (data.recentBookings||[]) : (data.recentBookings||[]).filter(b=>b.type===filter);
+
+  return (
+    <div className="tab-content fade-up">
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10}}>
+        <div className="filter-row">
+          {['all','parking','garage','residence'].map(f => {
+            const active = filter===f;
+            const vc  = f==='all' ? 'var(--brand)' : VENUE_COLOR[f];
+            const vbg = f==='all' ? 'var(--brand-light)' : VENUE_BG[f];
+            return (
+              <button key={f} className="filter-chip" onClick={() => setFilter(f)}
+                style={{background: active ? vc : vbg, borderColor: vc, color: active ? '#fff' : vc}}>
+                {f!=='all' && <VenueIcon type={f} size={13} color={active?'#fff':vc}/>}
+                {f==='all' ? 'All' : f.charAt(0).toUpperCase()+f.slice(1)}
+              </button>
+            );
+          })}
+        </div>
+        <button className="btn-download" onClick={() => {
+          const rows = filtered.map(b=>`${b.customerName},${b.slot},${b.amount},${b.status},${b.from}`).join('\n');
+          const blob = new Blob([`Name,Slot,Amount,Status,From\n${rows}`], {type:'text/csv'});
+          const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bookings.csv'; a.click();
+        }}>
+          <Icon name="Download" size={14}/> Export CSV
+        </button>
+      </div>
+
+      <div className="card" style={{borderRadius:'var(--radius-lg)', overflow:'hidden', marginTop:4}}>
+        {filtered.length === 0 ? (
+          <div style={{padding:40, textAlign:'center', color:'var(--text-2)'}}>
+            <Icon name="CalendarX2" size={36} color="#D6D3D1"/><br/>
+            <span style={{marginTop:10, display:'block'}}>No bookings found</span>
+          </div>
+        ) : filtered.map(b => <BookingRow key={b._id} booking={b}/>)}
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// MONTHLY TAB
+// ══════════════════════════════════════════════════════════
+const MonthlyTab = ({ data }) => {
+  const totalMRR  = (data.venues||[]).filter(v=>v.monthlyChargeEnabled).reduce((s,v)=>s+v.monthlyRate*v.activeMonthlySubscriptions,0);
+  const totalSubs = (data.venues||[]).filter(v=>v.monthlyChargeEnabled).reduce((s,v)=>s+v.activeMonthlySubscriptions,0);
+
+  return (
+    <div className="tab-content fade-up">
+      {/* MRR Hero */}
+      <div className="card" style={{padding:'24px 28px', display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-md)'}}>
+        <div>
+          <div className="stat-label">Monthly Recurring Revenue</div>
+          <div style={{fontFamily:'var(--font-display)', fontSize:42, fontWeight:900, color:'var(--brand)', letterSpacing:'-1.5px', lineHeight:1.1}}>${totalMRR.toLocaleString()}</div>
+          <div className="stat-sub">{totalSubs} active subscribers</div>
+        </div>
+        <div className="icon-wrap" style={{background:'var(--brand-light)', width:56, height:56, borderRadius:18}}>
+          <Icon name="Repeat" size={26} color="var(--brand)"/>
+        </div>
+      </div>
+
+      {/* Breakdown */}
+      {(data.venues||[]).filter(v=>v.monthlyChargeEnabled).length > 0 && (
+        <div className="card" style={{borderRadius:'var(--radius-lg)', overflow:'hidden', marginBottom:14, boxShadow:'var(--shadow)'}}>
+          {(data.venues||[]).filter(v=>v.monthlyChargeEnabled).map((v,i,arr) => (
+            <div key={v.id} style={{display:'flex', alignItems:'center', gap:12, padding:'14px 20px', borderBottom:i<arr.length-1?'1px solid var(--border)':'none'}}>
+              <div style={{width:9, height:9, borderRadius:'50%', background:VENUE_COLOR[v.type], flexShrink:0}}/>
+              <span style={{flex:1, fontWeight:700, fontSize:14}}>{v.name}</span>
+              <span style={{fontSize:13, color:'var(--text-2)'}}>{v.activeMonthlySubscriptions} subs</span>
+              <span style={{fontFamily:'var(--font-display)', fontWeight:800, color:VENUE_COLOR[v.type], fontSize:15, minWidth:65, textAlign:'right'}}>
+                ${(v.monthlyRate*v.activeMonthlySubscriptions).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <SectionTitle>Monthly Plan Overview</SectionTitle>
+      {(data.venues||[]).map((venue,i) => {
+        const vc  = VENUE_COLOR[venue.type];
+        const vbg = VENUE_BG[venue.type];
+        return (
+          <div key={venue.id||i} className="m-card fade-up">
+            <div className="m-card-header">
+              <div className="icon-wrap" style={{background:vbg}}>
+                <VenueIcon type={venue.type} size={18} color={vc}/>
+              </div>
+              <div style={{flex:1}}>
+                <div className="venue-name">{venue.name}</div>
+                <div className="venue-addr">{venue.type.charAt(0).toUpperCase()+venue.type.slice(1)}</div>
+              </div>
+              <div className="enabled-pill" style={{background:venue.monthlyChargeEnabled?'var(--success-bg)':'#F7F6F3', color:venue.monthlyChargeEnabled?'var(--success)':'var(--text-2)'}}>
+                {venue.monthlyChargeEnabled ? 'Enabled' : 'Disabled'}
+              </div>
+            </div>
+            {venue.monthlyChargeEnabled && (
+              <div className="m-card-body">
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+                  <span style={{fontSize:13, fontWeight:600, color:'var(--text-2)'}}>Monthly Rate</span>
+                  <span style={{fontFamily:'var(--font-display)', fontSize:22, fontWeight:900, color:'var(--brand)'}}>
+                    ${venue.monthlyRate}<span style={{fontSize:12, fontWeight:500, color:'var(--text-2)'}}>/mo</span>
+                  </span>
+                </div>
+                <div className="m-stats-row">
+                  {[{label:'Active Subs', value:`${venue.activeMonthlySubscriptions}`, hi:false},
+                    {label:'MRR', value:`$${venue.monthlyRate*venue.activeMonthlySubscriptions}`, hi:true},
+                    {label:'Slots Used', value:`${venue.slots?.booked||0}/${venue.slots?.total||0}`, hi:false}
+                  ].map((item,j,arr) => (
+                    <React.Fragment key={item.label}>
+                      {j>0 && <div className="m-stat-divider"/>}
+                      <div className="m-stat-item">
+                        <div className="m-stat-num" style={{color:item.hi?'var(--brand)':'var(--text)'}}>{item.value}</div>
+                        <div className="m-stat-lbl">{item.label}</div>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// DRY CLEANING TAB
+// ══════════════════════════════════════════════════════════
+const DryCleaningTab = ({ token }) => {
+  const [data, setData]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView]     = useState('overview');
+  const [period, setPeriod] = useState('weekly');
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api('/dry-cleaner-stats');
+      setData(res);
+    } catch(e) { console.error(e); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  if (loading) return <div className="center-state"><Spinner/><span style={{color:'var(--text-2)'}}>Loading laundry stats…</span></div>;
+  if (!data)   return <div className="center-state"><Icon name="AlertCircle" size={36} color="var(--error)"/><span style={{color:'var(--text-2)'}}>Could not load dry cleaner stats.</span><button className="btn-primary" onClick={fetchData}><Icon name="RefreshCw" size={14}/>Retry</button></div>;
+  if (!(data.shops||[]).length) return <div className="center-state"><Icon name="ShoppingBag" size={40} color="#D6D3D1"/><span style={{color:'var(--text-2)'}}>No dry cleaning shops registered yet.</span></div>;
+
+  const maxCatRevenue = data.categoryBreakdown?.[0]?.totalRevenue || 1;
+
+  const OrderRow = ({ order }) => {
+    const meta = STATUS_META[order.status] || STATUS_META['pending'];
+    return (
+      <div className="order-row">
+        <div className="order-icon-wrap" style={{background:meta.bg}}>
+          <Icon name="Package" size={15} color={meta.color}/>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap'}}>
+            <span style={{fontWeight:700, fontSize:14}}>{order.orderNumber}</span>
+            <div className="status-pill" style={{background:meta.bg, color:meta.color}}>{meta.label}</div>
+          </div>
+          <div style={{fontSize:12.5, color:'var(--text-2)'}}>{order.customerName} · {order.itemCount} item{order.itemCount!==1?'s':''}</div>
+          {order.scheduledPickup && <div style={{fontSize:11.5, color:'var(--text-2)', marginTop:2}}>Pickup: {fmtDateTime(order.scheduledPickup)}</div>}
+        </div>
+        <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'var(--brand)'}}>{fmtCurrency(order.totalAmount)}</div>
+      </div>
+    );
+  };
+
+  const ShopCard = ({ shop }) => {
+    const [exp, setExp] = useState(false);
+    return (
+      <div className="shop-card fade-up">
+        <div className="shop-header" onClick={() => setExp(!exp)}>
+          <div className="icon-wrap" style={{background:'var(--brand-light)'}}>
+            <Icon name="ShoppingBag" size={20} color="var(--brand)"/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:'var(--font-display)', fontSize:16, fontWeight:700}}>{shop.shopname}</div>
+            <div style={{fontSize:12, color:'var(--text-2)', marginTop:2}}>{shop.address?.street||''}{shop.address?.city?`, ${shop.address.city}`:''}</div>
+          </div>
+          <div style={{textAlign:'right', marginRight:8}}>
+            <div style={{fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'var(--brand)'}}>{fmtCurrency(shop.earnings?.[period]||0)}</div>
+            {shop.rating>0 && <div style={{display:'flex',alignItems:'center',gap:3,justifyContent:'flex-end',marginTop:3}}>
+              <Icon name="Star" size={11} color="var(--warning)"/>
+              <span style={{fontSize:12,fontWeight:700,color:'var(--warning)'}}>{shop.rating.toFixed(1)}</span>
+            </div>}
+          </div>
+          <Icon name={exp?'ChevronDown':'ChevronRight'} size={16} color="var(--text-2)"/>
+        </div>
+        <div className="shop-status-strip">
+          {[{label:'Pending',value:shop.orderStatus?.pending||0,color:'var(--warning)'},
+            {label:'Active', value:shop.orderStatus?.active||0, color:'var(--brand)'},
+            {label:'Ready',  value:shop.orderStatus?.readyForDelivery||0, color:'var(--success)'},
+            {label:'Done',   value:shop.orderStatus?.paid||0,   color:'var(--text-2)'}
+          ].map(item => (
+            <div key={item.label} className="shop-status-item">
+              <div className="shop-status-num" style={{color:item.color}}>{item.value}</div>
+              <div className="shop-status-lbl">{item.label}</div>
+            </div>
+          ))}
+        </div>
+        {exp && (
+          <div style={{padding:'0 20px 18px', borderTop:'1px solid var(--border)'}}>
+            {shop.recentOrders?.length > 0 && <>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--text-2)',textTransform:'uppercase',letterSpacing:0.6,margin:'14px 0 8px'}}>Recent Orders</div>
+              {shop.recentOrders.slice(0,3).map(o => <OrderRow key={o._id} order={o}/>)}
+            </>}
+            <div style={{display:'flex',alignItems:'center',gap:6,background:'var(--success-bg)',borderRadius:10,padding:10,marginTop:12}}>
+              <Icon name="TrendingUp" size={14} color="var(--success)"/>
+              <span style={{flex:1,fontSize:13,color:'var(--text-2)'}}>All-time Revenue</span>
+              <span style={{fontWeight:800,color:'var(--success)'}}>{fmtCurrency(shop.allTimeRevenue)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{flex:1, display:'flex', flexDirection:'column'}}>
+      <div className="dry-inner-tabs">
+        {['overview','orders','analytics'].map(v => (
+          <button key={v} className={`dry-inner-btn ${view===v?'active':''}`} onClick={() => setView(v)}>
+            {v.charAt(0).toUpperCase()+v.slice(1)}
+          </button>
+        ))}
+        <button className="btn-icon" style={{marginLeft:'auto'}} onClick={fetchData} title="Refresh">
+          <Icon name="RefreshCw" size={15}/>
+        </button>
+      </div>
+
+      {view==='overview' && (
+        <div className="main"><div className="tab-content fade-up">
+          <PeriodToggle period={period} onChange={setPeriod}/>
+          <div className="grid-4" style={{marginBottom:16, marginTop:12}}>
+            {[{label:'Revenue', value:fmtCurrency(data.totalEarnings?.[period]||0), color:'var(--brand)', icon:'TrendingUp'},
+              {label:'Orders',  value:String(data.totalBookings?.[period]||0),        color:'var(--purple)',icon:'ShoppingBag'},
+              {label:'Avg Order',value:fmtCurrency(data.overallStats?.avgOrderValue||0),color:'var(--teal)',icon:'BarChart2'},
+              {label:'Shops',   value:String(data.overallStats?.totalShops||0),       color:'var(--success)',icon:'Layers'}
+            ].map(item => (
+              <div key={item.label} className="stat-card fade-up" style={{borderLeftColor:item.color}}>
+                <div style={{width:32,height:32,borderRadius:10,background:item.color+'18',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+                  <Icon name={item.icon} size={16} color={item.color}/>
+                </div>
+                <div className="stat-label">{item.label}</div>
+                <div className="stat-value" style={{color:item.color, fontSize:26}}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pipeline */}
+          <SectionTitle>Order Pipeline</SectionTitle>
+          <div className="pipeline-card">
+            {[{label:'Pending',value:(data.statusBreakdown||[]).find(s=>s.status==='pending')?.count||0,color:'var(--warning)'},
+              {label:'Active', value:(data.statusBreakdown||[]).filter(s=>['accepted','in_progress','pickup_completed','en_route_to_dropoff','arrived_at_dropoff','dropped_at_center'].includes(s.status)).reduce((s,b)=>s+b.count,0), color:'var(--brand)'},
+              {label:'Ready',  value:(data.statusBreakdown||[]).find(s=>s.status==='ready_for_delivery')?.count||0, color:'var(--success)'},
+              {label:'Done',   value:(data.statusBreakdown||[]).find(s=>s.status==='completed')?.count||0, color:'var(--text-2)'}
+            ].map((item,i,arr) => (
+              <React.Fragment key={item.label}>
+                <div className="pipeline-item">
+                  <div className="pipeline-num" style={{color:item.color}}>{item.value}</div>
+                  <div className="pipeline-lbl">{item.label}</div>
+                </div>
+                {i<arr.length-1 && <div className="pipeline-div"/>}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Categories */}
+          {(data.categoryBreakdown||[]).length > 0 && <>
+            <SectionTitle>Top Categories</SectionTitle>
+            <div className="card" style={{padding:'18px 20px', borderRadius:'var(--radius-lg)', marginBottom:14}}>
+              {(data.categoryBreakdown||[]).slice(0,5).map((item,i) => {
+                const pct = maxCatRevenue > 0 ? (item.totalRevenue/maxCatRevenue)*100 : 0;
+                const col = CAT_COLORS[i % CAT_COLORS.length];
+                return (
+                  <div key={item.category} style={{marginBottom:i<4?14:0}}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                      <span style={{fontWeight:600,fontSize:14}}>{item.category}</span>
+                      <span style={{fontWeight:800,color:col}}>{fmtCurrency(item.totalRevenue)}</span>
+                    </div>
+                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:col}}/></div>
+                    <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
+                      <span style={{fontSize:11.5,color:'var(--text-2)'}}>{item.totalOrders} orders</span>
+                      <span style={{fontSize:11.5,color:'var(--text-2)'}}>{item.totalItems} items</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>}
+
+          <SectionTitle>Your Shops</SectionTitle>
+          {(data.shops||[]).map(shop => <ShopCard key={shop.id} shop={shop}/>)}
+        </div></div>
+      )}
+
+      {view==='orders' && (
+        <div className="main"><div className="tab-content fade-up">
+          <SectionTitle>Recent Orders</SectionTitle>
+          <div className="card" style={{borderRadius:'var(--radius-lg)',overflow:'hidden'}}>
+            {(data.recentOrders||[]).length===0 ? (
+              <div style={{padding:40,textAlign:'center',color:'var(--text-2)'}}>
+                <Icon name="ShoppingBag" size={36} color="#D6D3D1"/>
+                <div style={{marginTop:10}}>No orders yet</div>
+              </div>
+            ) : (data.recentOrders||[]).map(o => <OrderRow key={o._id} order={o}/>)}
+          </div>
+        </div></div>
+      )}
+
+      {view==='analytics' && (
+        <div className="main"><div className="tab-content fade-up">
+          <SectionTitle>Order Status Breakdown</SectionTitle>
+          <div className="card" style={{padding:'18px 20px',borderRadius:'var(--radius-lg)',marginBottom:14}}>
+            {(data.statusBreakdown||[]).map((item,i) => {
+              const meta = STATUS_META[item.status]||STATUS_META['pending'];
+              const total = (data.statusBreakdown||[]).reduce((s,b)=>s+b.count,0);
+              const pct = total>0 ? Math.round((item.count/total)*100) : 0;
+              return (
+                <div key={item.status} style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <div style={{width:30,height:30,borderRadius:8,background:meta.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <Icon name="Package" size={14} color={meta.color}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:600}}>{meta.label}</span>
+                      <span style={{fontWeight:800,color:meta.color}}>{item.count}</span>
+                    </div>
+                    <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:meta.color}}/></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <SectionTitle>Shop Revenue Comparison</SectionTitle>
+          <div className="card" style={{padding:'18px 20px',borderRadius:'var(--radius-lg)'}}>
+            {[...(data.shops||[])].sort((a,b)=>b.allTimeRevenue-a.allTimeRevenue).map((shop,i) => {
+              const maxR = data.shops[0]?.allTimeRevenue||1;
+              const pct  = maxR>0 ? (shop.allTimeRevenue/maxR)*100 : 0;
+              return (
+                <div key={shop.id} style={{marginBottom:14}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
+                    <div style={{padding:'2px 8px',borderRadius:7,background:i===0?'var(--warning-bg)':'#F7F6F3'}}>
+                      <span style={{fontSize:11,fontWeight:800,color:i===0?'var(--warning)':'var(--text-2)'}}>#{i+1}</span>
+                    </div>
+                    <span style={{flex:1,fontWeight:600,fontSize:14}}>{shop.shopname}</span>
+                    <span style={{fontFamily:'var(--font-display)',fontWeight:800,color:'var(--brand)'}}>{fmtCurrency(shop.allTimeRevenue)}</span>
+                  </div>
+                  <div className="cat-bar-bg"><div className="cat-bar-fill" style={{width:`${pct}%`,background:'var(--brand)'}}/></div>
+                  <div style={{fontSize:11.5,color:'var(--text-2)',marginTop:3}}>{shop.orderStatus?.paid||0} paid orders · {shop.totalServices} services</div>
+                </div>
+              );
+            })}
+          </div>
+        </div></div>
+      )}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════════════════════
+const TABS = [
+  { key:'overview',    label:'Overview',  icon:'LayoutDashboard' },
+  { key:'slots',       label:'Slots',     icon:'Grid3x3' },
+  { key:'bookings',    label:'Bookings',  icon:'List' },
+  { key:'monthly',     label:'Monthly',   icon:'Repeat' },
+  { key:'dryCleaning', label:'Laundry',   icon:'Shirt' },
+];
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [period,    setPeriod]    = useState('weekly');
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
+  const [refreshKey,setRefreshKey]= useState(0);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await api('/merchants/stats');
+      // Normalize dates
+      const norm = {
+        ...res,
+        venues: (res.venues||[]).map(v => ({
+          ...v,
+          recentBookings: (v.recentBookings||[]).map(b => ({
+            ...b,
+            from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
+            to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
+          }))
+        })),
+        recentBookings: (res.recentBookings||[]).map(b => ({
+          ...b,
+          from: typeof b.from==='string' ? b.from : new Date(b.from).toISOString(),
+          to:   typeof b.to  ==='string' ? b.to   : new Date(b.to).toISOString(),
+        }))
+      };
+      setData(norm);
+    } catch(e) {
+      setError(e.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
+
+  if (loading) return (
+    <div className="app">
+      <div className="topbar">
+        <div className="topbar-logo">ParkFlow</div>
+        <div className="topbar-sep"/>
+        <div className="topbar-merchant">Merchant Dashboard</div>
+      </div>
+      <div className="center-state" style={{flex:1}}>
+        <Spinner size={40}/>
+        <span style={{color:'var(--text-2)', fontSize:14}}>Loading dashboard…</span>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="app">
+      <div className="topbar">
+        <div className="topbar-logo">ParkFlow</div>
+      </div>
+      <div className="center-state" style={{flex:1}}>
+        <Icon name="AlertTriangle" size={40} color="var(--warning)"/>
+        <div style={{fontWeight:700, fontSize:16}}>Could not load dashboard</div>
+        <div style={{color:'var(--text-2)', fontSize:13, maxWidth:320, textAlign:'center'}}>{error}</div>
+        <button className="btn-primary" onClick={() => setRefreshKey(k=>k+1)}>
+          <Icon name="RefreshCw" size={15}/> Try Again
+        </button>
+        <div style={{fontSize:12,color:'var(--text-2)',marginTop:4,textAlign:'center'}}>
+          Make sure <code style={{background:'#F7F6F3',padding:'1px 5px',borderRadius:4}}>API_BASE_URL</code> is set correctly in index.html
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="app">
+      {/* Top bar */}
+      <div className="topbar">
+        <div className="topbar-logo">ParkFlow</div>
+        <div className="topbar-sep"/>
+        <div className="topbar-merchant">
+          {MERCHANT_ID ? `Merchant #${MERCHANT_ID}` : 'Merchant Dashboard'}
+        </div>
+        <div className="topbar-right">
+          <button className="btn-download" onClick={() => setRefreshKey(k=>k+1)}>
+            <Icon name="RefreshCw" size={14}/> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Tab strip */}
+      <div className="tab-strip">
+        {TABS.map(tab => (
+          <button key={tab.key} className={`tab-btn ${activeTab===tab.key?'active':''}`}
+            onClick={() => setActiveTab(tab.key)}>
+            <Icon name={tab.icon} size={15}/>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="main" key={activeTab}>
+        {activeTab==='overview'    && <OverviewTab   data={data} period={period} onPeriodChange={setPeriod}/>}
+        {activeTab==='slots'       && <SlotsTab      data={data}/>}
+        {activeTab==='bookings'    && <BookingsTab   data={data}/>}
+        {activeTab==='monthly'     && <MonthlyTab    data={data}/>}
+        {activeTab==='dryCleaning' && <DryCleaningTab token={AUTH_TOKEN}/>}
+      </div>
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
